@@ -147,7 +147,7 @@ const InferenceEngineUI = () => {
             <div className="mt-8">
               <div className="flex items-center gap-2 mb-4">
                 <Terminal className="w-6 h-6 text-gray-700" />
-                <h2 className="text-2xl font-semibold text-gray-800">File Content</h2>
+                <h2 className="text-2xl font-semibold text-gray-800">Input</h2>
               </div>
               <div className="bg-gray-900 p-4 rounded-lg shadow-inner">
                 <pre className="font-mono text-green-400 whitespace-pre-wrap">
