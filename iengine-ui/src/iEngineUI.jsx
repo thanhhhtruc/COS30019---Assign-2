@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Upload, Terminal, AlertCircle, Loader } from 'lucide-react';
 
-const InferenceEngineUI = () => {
+const iEngineUI = () => {
   const [file, setFile] = useState(null);
   const [method, setMethod] = useState('');
   const [result, setResult] = useState('');
@@ -66,6 +66,12 @@ const InferenceEngineUI = () => {
           <h1 className="text-3xl font-bold text-gray-800">iEngine</h1>
         </div>
       </header>
+
+      {/* Banner Section */}
+      <div className="bg-gradient-to-b from-sky-400 to-blue-900 text-white text-center py-16">
+        <h2 className="text-6xl font-extrabold">Inference Engine</h2>
+        <p className="text-3xl font-semibold mt-2">for Propositional Logic</p>
+      </div>
 
       {/* Main Content */}
       <div className="flex-grow flex items-center justify-center bg-gray-100 py-12">
@@ -186,4 +192,4 @@ const InferenceEngineUI = () => {
   );
 };
 
-export default InferenceEngineUI;
+export default iEngineUI;
