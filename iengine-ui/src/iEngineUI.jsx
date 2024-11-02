@@ -102,7 +102,7 @@ const iEngineUI = () => {
           {/* Method Selection */}
           <div className="mb-8">
             <h2 className="text-3xl font-semibold mb-4 text-gray-800">Select Method</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               {['TT', 'FC', 'BC'].map((m) => (
                 <button
                   key={m}
