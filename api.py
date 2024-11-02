@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import tempfile
 import os
 import sys
-from iengine_git import table_reader, truth_table, generic_truth_table, chain_reader, forward_chain, backward_chain, DPLL_reader, DPLL
+from iengine import parse_input_file, get_solver
 
 app = FastAPI()
 
@@ -24,34 +24,18 @@ async def process_file(file: UploadFile, method: str = Form(...)):
             tmp_file.write(content)
             tmp_file_path = tmp_file.name
 
-        # Process based on method using direct imports from iengine.py
-        if method == "TT":
-            kb, facts, query, horn_index = table_reader(tmp_file_path)
-            if horn_index == 0:
-                result = truth_table(kb, facts, query)
-            else:
-                result = generic_truth_table(kb, facts, query)
+        # Parse the input file and create the solver
+        kb_clauses, query = parse_input_file(tmp_file_path)
+        solver = get_solver(method, kb_clauses)
 
-        elif method == "FC":
-            kb, facts, query = chain_reader(tmp_file_path, method)
-            result = forward_chain(kb, facts, query)
+        # Solve the query
+        result, additional_info = solver.solve(query)
 
-        elif method == "BC":
-            kb, facts, query = chain_reader(tmp_file_path, method)
-            derived_facts = set()
-            result = backward_chain(kb, facts, query, derived_facts)
-
-        elif method == "DPLL":
-            kb, facts, query = DPLL_reader(tmp_file_path)
-            negated_query = '¬' + query if not query.startswith('¬') else query[1:]
-            kb.add(negated_query)
-            if DPLL(kb, facts):
-                result = "NO"
-            else:
-                result = "> YES"
-
+        if result:
+            info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
+            result = f'YES: {info_str}'
         else:
-            result = "Invalid search method. Please choose among: TT, FC, BC, DPLL"
+            result = "NO"
 
         # Clean up the temporary file
         os.unlink(tmp_file_path)
