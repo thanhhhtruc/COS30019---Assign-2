@@ -153,35 +153,59 @@ def chain_reader(filename, method):
 
 # Function handle algorithms for FC method
 def forward_chain(kb, facts, query):
+    derived_facts = set(facts)  # Initialize with initial facts
+    inference_order = []  # Track the order of inferences
+    
+    # Add initial facts to inference order in alphabetical order
+    for fact in sorted(facts):  # Sort initial facts alphabetically
+        if fact:  # Skip empty strings
+            inference_order.append(fact)
+    
     changed = True
     while changed:
         changed = False
-        for condition, result in kb.items(): # Check for condition per result (T/F) in the kb's item set
-            if all(c in facts for c in condition):
-                if result not in facts:
-                    facts.add(result)
-                    changed = True
-    # Filter out the empty string as the first module (goal state, which returns as null) should not be appended to the facts count
-    facts.discard('')
-    derived_facts_list = sorted(facts, key=lambda x: (len(x), x)) # sorted by the key and neglect redundant components
-    # Print test output with either YES (with module expansion) or NO
-    return f"> YES: " + ', '.join(derived_facts_list) if query in facts else "NO"
+        for condition, result in kb.items():
+            if all(c in derived_facts for c in condition) and result not in derived_facts:
+                derived_facts.add(result)
+                if result not in inference_order:
+                    inference_order.append(result)
+                changed = True
+    
+    # Filter out empty strings
+    inference_order = [f for f in inference_order if f.strip()]
+    
+    return f"> YES: " + ', '.join(inference_order) if query in derived_facts else "NO"
 
-# Function handle algorithms for BC method
 def backward_chain(kb, facts, query, derived_facts):
-    if query in facts: # if query in the facts set, set that one to the derived fact for usage
+    if query in facts:
         derived_facts.add(query)
         return True
-    if query not in kb: # Case the query in ASK component is out of the kb test case
+    
+    if query not in kb:
         return False
-    for conditions in kb[query]: # Check for condition in the kb's ASK query part
-        if all(backward_chain(kb, facts, cond, derived_facts) for cond in conditions):
+    
+    for conditions in kb[query]:
+        all_true = True
+        for cond in conditions:
+            if not backward_chain(kb, facts, cond, derived_facts):
+                all_true = False
+                break
+        
+        if all_true:
             derived_facts.add(query)
-            derived_facts_list = sorted(derived_facts, key=lambda x: (len(x), x)) # sorted by the key and neglect redundant components
-            return "> YES: " + ', '.join(derived_facts_list) # Print result
-        else:
-            return "NO"
-    return False
+            # Order facts alphabetically first, then by inference order
+            ordered_facts = []
+            # First add the initial facts that were used (in alphabetical order)
+            initial_facts = sorted([fact for fact in facts if fact in derived_facts])
+            ordered_facts.extend(initial_facts)
+            
+            # Then add derived facts in order of inference
+            for cond, _ in kb.items():
+                if cond in derived_facts and cond not in ordered_facts:
+                    ordered_facts.append(cond)
+            
+            return "> YES: " + ', '.join(ordered_facts)
+    return "NO"
 
 # DPLL PARSER
 def DPLL_reader(filename):
