@@ -25,83 +25,6 @@ class LogicalConnective(Enum):
         """Get regex pattern for matching logical operators."""
         # Escape special characters and join with OR
         return '|'.join(re.escape(member.symbol) for member in cls)
-    
-# class KnowledgeBase:
-#     """Class to manage the knowledge base and provide common utility functions."""
-    
-#     def __init__(self, clauses: List[str]):
-#         self.clauses = clauses
-#         self.symbols = self._extract_symbols()
-#         self.horn_clauses = self._parse_horn_clauses()
-#         self.is_horn_form = self._check_horn_form()
-        
-#     def _extract_symbols(self):  # -> Set[str]
-#         """Extract all unique propositional symbols from the KB."""
-#         # Get pattern for all operators
-#         op_pattern = LogicalConnective.get_operator_pattern()
-#         # Split by operators and filter out empty strings
-#         symbols = set()
-#         for clause in self.clauses:
-#             # Replace operators with spaces
-#             cleaned = re.sub(op_pattern, ' ', clause)
-            
-#             # Extract symbols (alphanumeric strings)
-#             symbols.update(token for token in cleaned.split() if token.isalnum() and not token.isnumeric())
-#         return symbols
-    
-#     def _check_horn_form(self): # -> bool
-#         """Check if the knowledge base is in Horn form."""
-#         for clause in self.clauses:
-#             if '||' in clause or '<=>' in clause:
-#                 return False
-#             if '=>' in clause:
-#                 antecedent = clause.split('=>')[0]
-#                 if '~' in antecedent:
-#                     return False
-#         return True
-    
-#     def _parse_horn_clauses(self): # -> List[Tuple[List[str], str]]
-#         """Parse all clauses from the knowledge base into premises and conclusions."""
-#         parsed_clauses = []
-#         for clause in self.clauses:
-#             if '=>' in clause:
-#                 premises, conclusion = clause.split('=>')
-#                 premises = premises.split('&') if '&' in premises else [premises]
-#                 parsed_clauses.append(
-#                     ([premise.strip() for premise in premises], 
-#                     conclusion.strip())
-#                 )
-#             else:
-#                 parsed_clauses.append(([], clause.strip()))
-#         return parsed_clauses
-    
-#     def normalize_expression(self, expr: str): # -> str
-#         """Convert expression to Python-evaluatable boolean expression."""
-#         expr = expr.replace(LogicalConnective.NEGATION.symbol, ' not ')
-#         expr = expr.replace(LogicalConnective.CONJUNCTION.symbol, ' and ')
-#         expr = expr.replace(LogicalConnective.DISJUNCTION.symbol, ' or ')
-#         # Handle implications and biconditionals specially during evaluation
-#         return expr
-
-
-# class InferenceEngine(ABC):
-#     """Abstract base class for inference engines."""
-    
-#     def __init__(self, clauses: List[str]):
-#         self.kb = KnowledgeBase(clauses)
-        
-#         # Only check Horn form requirement for chaining methods
-#         if not isinstance(self, TruthTable):
-#             if not self.kb.is_horn_form:
-#                 print("Error: Knowledge base is not in Horn form. Only TT method can be used.")
-#                 sys.exit(1)
-#             # raise ValueError(f"Knowledge base must be in Horn form. Only TT method can be used.") 
-    
-#     @abstractmethod
-#     def solve(self, query: str): # -> Tuple[bool, Union[int, List[str]]]
-#         """Solve the inference problem."""
-#         pass
-
 
 class KnowledgeBase:
     """Class to manage the knowledge base and provide common utility functions."""
@@ -195,10 +118,13 @@ class InferenceEngine(ABC):
         """Solve the inference problem."""
         pass
 
+
+
+
 class TruthTable(InferenceEngine):
-    """Truth table checking algorithm implementation."""
+    """Truth table checking algorithm implementation with visualization."""
     
-    def _evaluate_clause(self, clause: str, model: Dict[str, bool]): #  -> bool
+    def _evaluate_clause(self, clause: str, model: Dict[str, bool]): # -> bool
         """Evaluate a single clause given a model."""
         # Replace symbols with their boolean values
         expr = clause
@@ -208,15 +134,12 @@ class TruthTable(InferenceEngine):
         try:
             # Handle implications
             while '=>' in expr:
-                # Find the leftmost implication
                 parts = expr.split('=>', 1)
                 if len(parts) != 2:
                     return False
                 
                 left = self._evaluate_boolean_expr(parts[0])
                 right = self._evaluate_boolean_expr(parts[1])
-                
-                # Apply implication logic: not left or right
                 result = (not left) or right
                 expr = str(result)
             
@@ -228,35 +151,145 @@ class TruthTable(InferenceEngine):
     
     def _evaluate_boolean_expr(self, expr: str): # -> bool
         """Evaluate a boolean expression."""
-        # Clean up the expression
         expr = expr.strip()
-        
-        # Replace operators with Python boolean operators
         expr = expr.replace('&', ' and ').replace('|', ' or ').replace('~', ' not ')
-        
         try:
             return bool(eval(expr))
         except:
             return False
-    
-    def solve(self, query: str): #  -> Tuple[bool, int]
-        """Solve using truth table method."""
-        models_count = 0
+
+    def get_truth_table(self, query: str): # -> dict
+        """Generate complete truth table data."""
+        # Get sorted list of symbols
         symbols = sorted(list(self.kb.symbols))
-        total_models = 2 ** len(symbols)
+        n_symbols = len(symbols)
+        total_models = 2 ** n_symbols
         
+        # Initialize truth table data
+        truth_table = {
+            'symbols': symbols,
+            'clauses': self.kb.clauses,
+            'query': query,
+            'rows': []
+        }
+        
+        # Generate all possible models
         for i in range(total_models):
             # Create model
             model = {}
             for j, symbol in enumerate(symbols):
                 model[symbol] = bool((i >> j) & 1)
             
-            # Check if model satisfies KB and query
-            kb_satisfied = all(self._evaluate_clause(clause, model) for clause in self.kb.clauses)
-            if kb_satisfied and self._evaluate_clause(query, model):
-                models_count += 1
+            # Evaluate clauses and query
+            kb_results = []
+            kb_satisfied = True
+            for clause in self.kb.clauses:
+                result = self._evaluate_clause(clause, model)
+                kb_results.append(result)
+                if not result:
+                    kb_satisfied = False
+            
+            query_result = self._evaluate_clause(query, model)
+            
+            # Add row to truth table
+            row = {
+                'model': model,
+                'kb_results': kb_results,
+                'kb_satisfied': kb_satisfied,
+                'query_result': query_result,
+                'proves_query': kb_satisfied and query_result
+            }
+            truth_table['rows'].append(row)
         
-        return models_count > 0, models_count
+        # Calculate summary
+        proving_models = sum(1 for row in truth_table['rows'] 
+                           if row['kb_satisfied'] and row['query_result'])
+        truth_table['summary'] = {
+            'total_models': total_models,
+            'proving_models': proving_models,
+            'is_entailed': proving_models > 0
+        }
+        
+        return truth_table
+
+    def solve(self, query: str): #  -> Tuple[bool, int]
+        """Solve using truth table method."""
+        # Use get_truth_table to compute result
+        truth_table = self.get_truth_table(query)
+        return (truth_table['summary']['is_entailed'], 
+                truth_table['summary']['proving_models'])
+
+
+
+
+
+
+
+
+
+
+# class TruthTable(InferenceEngine):
+#     """Truth table checking algorithm implementation."""
+    
+#     def _evaluate_clause(self, clause: str, model: Dict[str, bool]): #  -> bool
+#         """Evaluate a single clause given a model."""
+#         # Replace symbols with their boolean values
+#         expr = clause
+#         for symbol, value in model.items():
+#             expr = re.sub(r'\b' + re.escape(symbol) + r'\b', str(value), expr)
+        
+#         try:
+#             # Handle implications
+#             while '=>' in expr:
+#                 # Find the leftmost implication
+#                 parts = expr.split('=>', 1)
+#                 if len(parts) != 2:
+#                     return False
+                
+#                 left = self._evaluate_boolean_expr(parts[0])
+#                 right = self._evaluate_boolean_expr(parts[1])
+                
+#                 # Apply implication logic: not left or right
+#                 result = (not left) or right
+#                 expr = str(result)
+            
+#             return self._evaluate_boolean_expr(expr)
+            
+#         except Exception as e:
+#             print(f"Error evaluating clause '{clause}': {str(e)}")
+#             return False
+    
+#     def _evaluate_boolean_expr(self, expr: str): # -> bool
+#         """Evaluate a boolean expression."""
+#         # Clean up the expression
+#         expr = expr.strip()
+        
+#         # Replace operators with Python boolean operators
+#         expr = expr.replace('&', ' and ').replace('|', ' or ').replace('~', ' not ')
+        
+#         try:
+#             return bool(eval(expr))
+#         except:
+#             return False
+    
+#     def solve(self, query: str): #  -> Tuple[bool, int]
+#         """Solve using truth table method."""
+#         models_count = 0
+#         symbols = sorted(list(self.kb.symbols))
+#         total_models = 2 ** len(symbols)
+        
+#         for i in range(total_models):
+#             # Create model
+#             model = {}
+#             for j, symbol in enumerate(symbols):
+#                 model[symbol] = bool((i >> j) & 1)
+            
+#             # Check if model satisfies KB and query
+#             kb_satisfied = all(self._evaluate_clause(clause, model) for clause in self.kb.clauses)
+#             if kb_satisfied and self._evaluate_clause(query, model):
+#                 models_count += 1
+        
+#         return models_count > 0, models_count
     
 class ChainingSolver(InferenceEngine):
     """Base class for chaining algorithms with common functionality."""

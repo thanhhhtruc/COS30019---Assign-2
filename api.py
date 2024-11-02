@@ -15,6 +15,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# @app.post("/api/process")
+# async def process_file(file: UploadFile, method: str = Form(...)):
+#     try:
+#         # Create a temporary file to store the uploaded content
+#         with tempfile.NamedTemporaryFile(delete=False, suffix='.txt') as tmp_file:
+#             content = await file.read()
+#             tmp_file.write(content)
+#             tmp_file_path = tmp_file.name
+
+#         # Parse the input file and create the solver
+#         kb_clauses, query = parse_input_file(tmp_file_path)
+#         solver = get_solver(method, kb_clauses)
+
+#         # Solve the query
+#         result, additional_info = solver.solve(query)
+
+#         if result:
+#             info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
+#             result = f'YES: {info_str}'
+#         else:
+#             result = "NO"
+#         # Clean up the temporary file
+#         os.unlink(tmp_file_path)
+
+#         return result
+
+#     except Exception as e:
+#         return f"Error: {str(e)}"
+
+
 @app.post("/api/process")
 async def process_file(file: UploadFile, method: str = Form(...)):
     try:
@@ -30,20 +60,31 @@ async def process_file(file: UploadFile, method: str = Form(...)):
 
         # Solve the query
         result, additional_info = solver.solve(query)
-
+        
+        response_data = {}
+        
+        # Format the result string
         if result:
             info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
-            result = f'YES: {info_str}'
+            response_data["result"] = f'YES: {info_str}'
         else:
-            result = "NO"
+            response_data["result"] = "NO"
+            
+        # If using TT method, include truth table data
+        if method == "TT":
+            truth_table = solver.get_truth_table(query)
+            response_data["truthTable"] = truth_table
+
         # Clean up the temporary file
         os.unlink(tmp_file_path)
 
-        return result
+        return response_data
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
