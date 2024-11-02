@@ -1,5 +1,7 @@
 import sys
-from sequence import TruthTable, ForwardChaining, BackwardChaining
+import re
+from itertools import product
+from sequence_git import operator_table, operator_chain, generic_operator_table, DPLL_propagate_unit_clauses
 
 # TRUTH TABLE PARSER
 def table_reader(filename):
@@ -246,25 +248,39 @@ def DPLL(kb, facts):
 # MAIN ALGORITHMS OPERATOR
 if __name__ == "__main__":
     filename = sys.argv[1]
-    method = sys.argv[2].upper()
-    
-    try:
-        # Parse input and create solver
-        kb_clauses, query = parse_input_file(filename)
-        solver = get_solver(method, kb_clauses)
-        
-        # Solve and format output
-        result, additional_info = solver.solve(query)
-        
-        if result:
-            info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
-            print(f'YES: {info_str}')
+    method = sys.argv[2]
+
+    if method == "TT": # If it is Truth Table method
+        kb, facts, query, horn_index = table_reader(filename)
+        if horn_index == 0: # Call regular truth table algorithm casing no bracket rule
+            result = truth_table(kb, facts, query)
+        elif horn_index == 1: # Call generic truth table algorithm casing bracket rule
+            result = generic_truth_table(kb, facts, query)
+        print(result)
+
+    elif method == "FC": # If it is Forward Chain method
+        kb, facts, query = chain_reader(filename, method)
+        result = forward_chain(kb, facts, query)
+        print(result)
+
+    elif method == "BC": # If it is Backward Chain method
+        kb, facts, query = chain_reader(filename, method)
+        derived_facts = set()
+        result = backward_chain(kb, facts, query, derived_facts)
+        print(result)
+
+    elif method == "DPLL": # If it is Davis-Putnam-Logemann-Loveland method
+        kb, facts, query = DPLL_reader(filename)
+        # Negate the query and add to the knowledge base to check for entailment
+        negated_query = '¬' + query if not query.startswith('¬') else query[1:]
+        kb.add(negated_query)
+        if DPLL(kb, facts):
+            print("NO")  # Query is not entailed
         else:
-            print("NO")
-    except Exception as e:
-        print(f"Error: {str(e)}")
+            print("> YES")  # Query is entailed
+
+    else:
+        # Invalid search method command
+        print("Invalid search method. Please choose among: TT, FC, BC, DPLL")
         sys.exit(1)
 
-
-if __name__ == "__main__":
-    main()

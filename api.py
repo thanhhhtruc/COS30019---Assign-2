@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import tempfile
 import os
 import sys
-from iengine import table_reader, truth_table, generic_truth_table, chain_reader, forward_chain, backward_chain, DPLL_reader, DPLL
+from iengine_git import table_reader, truth_table, generic_truth_table, chain_reader, forward_chain, backward_chain, DPLL_reader, DPLL
 
 app = FastAPI()
 
