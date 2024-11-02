@@ -257,7 +257,7 @@ const iEngineUI = () => {
         setTruthTable(data.truthTable);
       }
     } catch (err) {
-      setError('Error processing file: The provided knowledge base is not a Horn KB, so forward chaining (FC) and backward chaining (BC) methods cannot be performed.');
+      setError('Error processing file: ' + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -366,25 +366,6 @@ const iEngineUI = () => {
               </div>
             </div>
 
-<<<<<<< HEAD
-          {/* Method Selection */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-semibold mb-4 text-gray-800">Select Method</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              {['TT', 'FC', 'BC'].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => handleMethodSelect(m)}
-                  className={`p-4 rounded-xl font-medium transition-all transform hover:scale-105 
-                    ${method === m
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                    }`}
-                >
-                  {m}
-                </button>
-              ))}
-=======
             {/* Method Selection */}
             <div className="mb-8">
               <h2 className="text-3xl font-semibold mb-4 text-gray-800">Select Method</h2>
@@ -403,7 +384,6 @@ const iEngineUI = () => {
                   </button>
                 ))}
               </div>
->>>>>>> 7e46693 (Update frontend for truth table visualization)
             </div>
 
             {/* Process Button */}
