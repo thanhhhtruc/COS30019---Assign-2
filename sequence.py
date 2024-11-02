@@ -26,15 +26,93 @@ class LogicalConnective(Enum):
         # Escape special characters and join with OR
         return '|'.join(re.escape(member.symbol) for member in cls)
     
+# class KnowledgeBase:
+#     """Class to manage the knowledge base and provide common utility functions."""
+    
+#     def __init__(self, clauses: List[str]):
+#         self.clauses = clauses
+#         self.symbols = self._extract_symbols()
+#         self.horn_clauses = self._parse_horn_clauses()
+#         self.is_horn_form = self._check_horn_form()
+        
+#     def _extract_symbols(self):  # -> Set[str]
+#         """Extract all unique propositional symbols from the KB."""
+#         # Get pattern for all operators
+#         op_pattern = LogicalConnective.get_operator_pattern()
+#         # Split by operators and filter out empty strings
+#         symbols = set()
+#         for clause in self.clauses:
+#             # Replace operators with spaces
+#             cleaned = re.sub(op_pattern, ' ', clause)
+            
+#             # Extract symbols (alphanumeric strings)
+#             symbols.update(token for token in cleaned.split() if token.isalnum() and not token.isnumeric())
+#         return symbols
+    
+#     def _check_horn_form(self): # -> bool
+#         """Check if the knowledge base is in Horn form."""
+#         for clause in self.clauses:
+#             if '||' in clause or '<=>' in clause:
+#                 return False
+#             if '=>' in clause:
+#                 antecedent = clause.split('=>')[0]
+#                 if '~' in antecedent:
+#                     return False
+#         return True
+    
+#     def _parse_horn_clauses(self): # -> List[Tuple[List[str], str]]
+#         """Parse all clauses from the knowledge base into premises and conclusions."""
+#         parsed_clauses = []
+#         for clause in self.clauses:
+#             if '=>' in clause:
+#                 premises, conclusion = clause.split('=>')
+#                 premises = premises.split('&') if '&' in premises else [premises]
+#                 parsed_clauses.append(
+#                     ([premise.strip() for premise in premises], 
+#                     conclusion.strip())
+#                 )
+#             else:
+#                 parsed_clauses.append(([], clause.strip()))
+#         return parsed_clauses
+    
+#     def normalize_expression(self, expr: str): # -> str
+#         """Convert expression to Python-evaluatable boolean expression."""
+#         expr = expr.replace(LogicalConnective.NEGATION.symbol, ' not ')
+#         expr = expr.replace(LogicalConnective.CONJUNCTION.symbol, ' and ')
+#         expr = expr.replace(LogicalConnective.DISJUNCTION.symbol, ' or ')
+#         # Handle implications and biconditionals specially during evaluation
+#         return expr
+
+
+# class InferenceEngine(ABC):
+#     """Abstract base class for inference engines."""
+    
+#     def __init__(self, clauses: List[str]):
+#         self.kb = KnowledgeBase(clauses)
+        
+#         # Only check Horn form requirement for chaining methods
+#         if not isinstance(self, TruthTable):
+#             if not self.kb.is_horn_form:
+#                 print("Error: Knowledge base is not in Horn form. Only TT method can be used.")
+#                 sys.exit(1)
+#             # raise ValueError(f"Knowledge base must be in Horn form. Only TT method can be used.") 
+    
+#     @abstractmethod
+#     def solve(self, query: str): # -> Tuple[bool, Union[int, List[str]]]
+#         """Solve the inference problem."""
+#         pass
+
+
 class KnowledgeBase:
     """Class to manage the knowledge base and provide common utility functions."""
     
     def __init__(self, clauses: List[str]):
+        """Initialize knowledge base with a list of clauses."""
         self.clauses = clauses
         self.symbols = self._extract_symbols()
         self.horn_clauses = self._parse_horn_clauses()
         self.is_horn_form = self._check_horn_form()
-        
+    
     def _extract_symbols(self):  # -> Set[str]
         """Extract all unique propositional symbols from the KB."""
         # Get pattern for all operators
@@ -60,48 +138,62 @@ class KnowledgeBase:
                     return False
         return True
     
-    def _parse_horn_clauses(self): # -> List[Tuple[List[str], str]]
+    def _parse_horn_clauses(self):
         """Parse all clauses from the knowledge base into premises and conclusions."""
         parsed_clauses = []
+        
         for clause in self.clauses:
+            # Skip non-Horn clauses for parsing
+            if '||' in clause or '<=>' in clause:
+                continue
+                
             if '=>' in clause:
-                premises, conclusion = clause.split('=>')
-                premises = premises.split('&') if '&' in premises else [premises]
-                parsed_clauses.append(
-                    ([premise.strip() for premise in premises], 
-                    conclusion.strip())
-                )
+                try:
+                    premises, conclusion = clause.split('=>')
+                    premises = premises.split('&') if '&' in premises else [premises]
+                    parsed_clauses.append(
+                        ([premise.strip() for premise in premises], 
+                        conclusion.strip())
+                    )
+                except ValueError:
+                    print(f"Error parsing clause: {clause}")
+                    continue
             else:
-                parsed_clauses.append(([], clause.strip()))
+                # Handle simple facts
+                clauses_split = [c.strip() for c in clause.split('&') if c.strip()]
+                for c in clauses_split:
+                    if '~' not in c:  # Skip negated facts
+                        parsed_clauses.append(([], c.strip()))
+                    
         return parsed_clauses
-    
-    def normalize_expression(self, expr: str): # -> str
-        """Convert expression to Python-evaluatable boolean expression."""
-        expr = expr.replace(LogicalConnective.NEGATION.symbol, ' not ')
-        expr = expr.replace(LogicalConnective.CONJUNCTION.symbol, ' and ')
-        expr = expr.replace(LogicalConnective.DISJUNCTION.symbol, ' or ')
-        # Handle implications and biconditionals specially during evaluation
-        return expr
-
 
 class InferenceEngine(ABC):
     """Abstract base class for inference engines."""
     
     def __init__(self, clauses: List[str]):
-        self.kb = KnowledgeBase(clauses)
+        # First check if this is a TT method before validating Horn form
+        is_tt = isinstance(self, TruthTable)
         
-        # Only check Horn form requirement for chaining methods
-        if not isinstance(self, TruthTable):
-            if not self.kb.is_horn_form:
-                print("Error: Knowledge base is not in Horn form. Only TT method can be used.")
+        try:
+            self.kb = KnowledgeBase(clauses)
+            
+            # Only check Horn form requirement for chaining methods
+            if not is_tt and not self.kb.is_horn_form:
+                print(f"Error: Knowledge base contains non-Horn clauses. Found:")
+                for clause in clauses:
+                    if '||' in clause or '<=>' in clause or ('=>' in clause and '~' in clause.split('=>')[0]):
+                        print(f"  - {clause}")
+                print("\nOnly TT (truth table) method can be used with non-Horn clauses.")
                 sys.exit(1)
-            # raise ValueError(f"Knowledge base must be in Horn form. Only TT method can be used.") 
+                
+        except Exception as e:
+            print(f"Error initializing knowledge base: {str(e)}")
+            sys.exit(1)
     
     @abstractmethod
-    def solve(self, query: str): # -> Tuple[bool, Union[int, List[str]]]
+    def solve(self, query: str):
         """Solve the inference problem."""
         pass
-
 
 class TruthTable(InferenceEngine):
     """Truth table checking algorithm implementation."""

@@ -1,34 +1,79 @@
 import sys
 from sequence import TruthTable, ForwardChaining, BackwardChaining
 
+# def parse_input_file(filename):
+#     """Parse the input file to extract KB and query."""
+#     try:
+#         with open(filename, 'r') as file:
+#             content = file.readlines()
+            
+#         # Split content at TELL and ASK markers
+#         if 'TELL' not in content or 'ASK' not in content:
+#             raise ValueError("Input file must contain both TELL and ASK sections.")
+        
+#         parts = content.split('TELL\n')[1].split('ASK\n')
+#         if len(parts) != 2:
+#             raise ValueError("Invalid file format.")
+        
+#         # Extract and clean KB and query
+#         kb_str = parts[0].strip().replace(' ', '').replace('\n', '')
+#         query = parts[1].strip()
+        
+#         # Split KB into clauses
+#         kb_clauses = [clause.strip() for clause in kb_str.split(';') if clause.strip()]
+        
+#         return kb_clauses, query
+#     except FileNotFoundError:
+#         print(f'Error: File "{filename}" not found.')
+#         sys.exit(1)
+#     except Exception as e:
+#         print(f'Error parsing input file: {str(e)}')
+#         sys.exit(1)
+
+
 def parse_input_file(filename):
     """Parse the input file to extract KB and query."""
     try:
         with open(filename, 'r') as file:
             content = file.readlines()
+
             
-        # Split content at TELL and ASK markers
-        if 'TELL' not in content or 'ASK' not in content:
+        # Find the indices of TELL and ASK markers
+        tell_index = -1
+        ask_index = -1
+        for i, line in enumerate(content):
+            if line.strip() == 'TELL':
+                tell_index = i
+            elif line.strip() == 'ASK':
+                ask_index = i
+                
+        if tell_index == -1 or ask_index == -1:
             raise ValueError("Input file must contain both TELL and ASK sections.")
+            
+        # Extract KB section (everything between TELL and ASK)
+        kb_lines = content[tell_index + 1:ask_index]
+        kb_str = ''.join(kb_lines).strip().replace(' ', '').replace('\n', '')
         
-        parts = content.split('TELL\n')[1].split('ASK\n')
-        if len(parts) != 2:
-            raise ValueError("Invalid file format.")
-        
-        # Extract and clean KB and query
-        kb_str = parts[0].strip().replace(' ', '').replace('\n', '')
-        query = parts[1].strip()
-        
+        # Extract query (everything after ASK)
+        query_lines = content[ask_index + 1:]
+        query = ''.join(query_lines).strip()
+  
         # Split KB into clauses
         kb_clauses = [clause.strip() for clause in kb_str.split(';') if clause.strip()]
         
         return kb_clauses, query
+        
     except FileNotFoundError:
         print(f'Error: File "{filename}" not found.')
         sys.exit(1)
     except Exception as e:
         print(f'Error parsing input file: {str(e)}')
+        print(f"Debug - Error occurred at line: {sys.exc_info()[2].tb_lineno}")
         sys.exit(1)
+
+
+
+
 
 def get_solver(method, kb_clauses):
     """Factory function to create appropriate solver instance."""
