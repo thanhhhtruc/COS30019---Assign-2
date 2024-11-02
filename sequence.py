@@ -1,254 +1,277 @@
-import re
-from itertools import product
+from typing import List, Set, Dict, Tuple, Union
+from enum import Enum
+import re, sys
+from abc import ABC, abstractmethod
 
-# Define a dictionary for universal variables.
-# Convert the definition to standard operators.
-# This way, if a test file uses symbol with the same meaning, they will be treated the same.
-universal_variables = {
-    '^':  '&',   '∧': '&',  # Conjuction (and)
-    '|': '||',              # Disjunction (or)
-    '¬':  '~',   '!': '~',  # Negation (not)
-    '->': '=>',  '→': '=>', # Implication
-    '<-': '<=',  '←': '<=', # Deduction 
-    '<=>':'<->', '↔': '<->',# Biconditional 
-}
-
-# Operator used for TT method to set facts as from part
-def operator_table(part, kb, facts):
-    # Check and read universal symbol, if used in the test file.
-    for variable, symbol in universal_variables.items():
-        part = part.replace(variable, symbol)
-    # Identify conditional operators (implication, deduction, biconditional)
-    # Assertion conditional operators (negation, conjunction, disjunction) 
-    if '=>' in part: # Implication Operator
-        parts = part.split('=>')  # Split only once at the first occurrence
-        if '&' in parts[0]: # For conjunction operator, strip left component by parts with & symbol in between, parts at index 1 is the right component
-            left = tuple([c.strip() for c in parts[0].split('&')]) 
-            right = parts[1].strip()
-            kb.append((left, right))
-        elif '||' in parts[0]: # For disjunction operator, split them similarly to conjunction at first
-            left = tuple(['*' + c.strip() if c.strip() else c.strip() for c in parts[0].split('||')]) # Remark disjunction parameter with a '*' symbol
-            right = parts[1].strip()
-            kb.append((left, right)) 
-        elif '~' in parts[0]: # For negation operator
-            fact = parts[0].strip('~').strip # Strip negation component
-            if fact:
-                kb.append(fact, False) # Append false value to kb      
-        else: # Neither conjunction nor disjunction, just strip left and right component by parts with the operator symbol in between
-            left = tuple(c.strip() for c in parts[0].split('=>'))
-            right = parts[1].strip()
-            kb.append((left, right))
-    elif '<=' in part: # Deduction Operator
-        parts = part.split('<=')  # Split only once at the first occurrence
-        if '&' in parts[1]: # For conjunction operator, strip right component by parts with & symbol in between, parts at index 1 is the left component
-            right = tuple([c.strip() for c in parts[1].split('&')])
-            left = parts[0].strip()
-            kb.append((right, left))
-        elif '||' in parts[1]: # For disjunction operator, split them similarly to conjunction at first
-            right = tuple(['*' + c.strip() if c.strip() else c.strip() for c in parts[1].split('||')]) # Remark disjunction parameter with a '*' symbol
-            left = parts[0].strip()
-            kb.append((right, left))
-        elif '~' in parts[1]: # For negation operator
-            fact = parts[0].strip('~').strip # Strip negation component
-            if fact:
-                kb.append(fact, False) # Append false value to kb
-        else: # Neither conjunction nor disjunction, just strip right and left component by parts with the operator symbol in between
-            right = tuple(c.strip() for c in parts[1].split('<='))
-            left = parts[0].strip()
-            kb.append((right, left))
-    elif '<->' in part: # Biconditional Operator
-        if '&' in part: # For conjunction operator
-            parts = part.split('<->')  # Split only once at the first occurrence
-            left = tuple([c.strip() for c in parts[0].split('&')])
-            right = parts[1].strip()
-            kb.append((left, right))
-            kb.append((tuple(right.split('&')), left))  # Add the converse implication to make sure it append both way (implicate then deduct)
-        elif '||' in part: # For disjunction operator
-            parts = part.split('<->')  # Split only once at the first occurrence
-            left = tuple(['*' + c.strip() if c.strip() else c.strip() for c in parts[0].split('||')]) # Remark disjunction parameter with a '*' symbol
-            right = parts[1].strip()
-            kb.append((left, right))
-            kb.append((tuple(right.split('||')), left))  # Add the converse implication to make sure it append both way (implicate then deduct)
-        elif '~' in part: # For negation operator
-            fact = part.strip('~').strip # Strip negation component
-            if fact:
-                kb.append(fact, False) # Append false value to kb
-        else: # Neither conjunction nor disjunction
-            parts = part.split('<->')  # Split only once at the first occurrence
-            left = tuple([c.strip() for c in parts[0].split('<->')])
-            right = parts[1].strip()
-            kb.append((left, right))
-            kb.append((tuple(right.split('<->')), left))  # Add the converse implication to make sure it append both way (implicate then deduct)
-    else:
-        facts.add(part)
-        facts.discard('') # Filter out the empty string as the first module (goal state, which returns as null) should not be appended to the facts count
-    return part, facts 
-
-# Operator used for FC and BC methods to set facts as from part
-def operator_chain(part, method, kb, facts):
-    # Check and read universial symbol, if used in the test file
-    for variable, symbol in universal_variables.items():
-        part = part.replace(variable, symbol)
-    # Print error message when a generic KB (not in Horn-form) is applied for FC and BC method.
-    if '(' in part:
-        print("Generic KB is not applicable to FC and BC method. Cannot use bracket.")
-        return
-    if '||' in part:
-        print("Generic KB is not applicable to FC and BC method. Cannot use disjunction connective.")
-        return
-    if '~' in part:
-        print("Generic KB is not applicable to FC and BC method. Cannot use negation operator.")
-        return
-    # Identify conditional operators (implication, deduction, biconditional)
-    # Assertion conditional operators (negation, conjunction, disjunction)
-    if '=>' in part:  # Implication Operator
-        left, right = part.split('=>')
-        left_parts = left.split('&')
-        left_parts2 = []
-        for c in left_parts:
-            left_parts2.append(c.strip())
-        condition = tuple(left_parts2)
-        if method == "FC":
-            kb[condition] = right.strip()
-        elif method == "BC":
-            kb.setdefault(right.strip(), []).append(condition)
-    elif '<=' in part:  # Deduction Operator
-        right, left = part.split('<=')
-        right_parts = right.split('&')
-        right_parts2 = []
-        for c in right_parts:
-            right_parts2.append(c.strip())
-        condition = tuple(right_parts2)
-        if method == "FC":
-            kb[condition] = left.strip()
-        elif method == "BC":
-            kb.setdefault(left.strip(), []).append(condition)
-    elif '<->' in part:  # Biconditional Operator
-        left, right = part.split('<->')
-        left_parts = left.split('&')
-        left_parts2 = []
-        for c in left_parts:
-            left_parts2.append(c.strip())
-        right_parts = right.split('&')
-        right_parts2 = []
-        for c in right_parts:
-            right_parts2.append(c.strip())
-        condition_left = tuple(left_parts2)
-        condition_right = tuple(right_parts2)
-        if method == "FC":
-            kb[condition_left] = right.strip()  # Implication fist
-            # Then deduction for biconditional
-            kb[condition_right] = left.strip()
-        elif method == "BC":
-            kb.setdefault(right.strip(), []).append(
-                condition_left)  # Implication fist
-            kb.setdefault(left.strip(), []).append(
-                condition_right)  # Then deduction for biconditional
-    else:
-        facts.add(part)
-    return kb, facts
-
-# Operator used for generic TT method (with bracket rules applied) to set facts as from part
-# Note that this function can also be applied to a kb that does not have a bracket, however, there must be at least one of them to have the bracket within that test case, else it would return error
-# This function has the additional parameter of level (1 or 0), indicating if the part is inside a bracket (1), or not (0)
-def generic_operator_table(part, kb, facts, level=0):
-    for variable, symbol in universal_variables.items():
-        part = part.replace(variable, symbol)
-    if '(' in part: # Key difference of this function to the regular TT function is that it increment the bracket level for each time it locates a bracket
-        level += 1  # Therefore, the component inside the bracket will be set as level 1, which allow the function to prioritise handling parts without the bracket first
-        while '(' in part: # running the loop for bracket case
-            inner_parts = re.findall(r'\(([^()]+)\)', part) # Find all inside a bracket, which we set them as the inner_parts
-            for inner_part in inner_parts: # Irritate over each inner_part
-                generic_operator_table(inner_part, kb, facts, level) # Call the function to run the loop once again with the inner_part extracted, while we have append the level to be 1
-            part = re.sub(r'\(([^()]+)\)', '@', part) # Substitute the previous part as @, which that inner part after being evaluated (T/F), will set @ character's value to be T/F
-    # Identify conditional operators (implication, deduction, biconditional)
-    # Assertion conditional operators (negation, conjunction, disjunction) 
-    # Note that this will differ to the regular TT function as the kb appended has the level parameter (0/1) as defined
-    if '=>' in part: # Implication Operator
-        parts = part.split('=>', 1)  # Split only once at the first occurrence
-        if '&' in parts[0]: # For conjunction operator, strip left component by parts with & symbol in between, parts at index 1 is the right component
-            left = tuple([c.strip() for c in parts[0].split('&')]) 
-            right = parts[1].strip()
-            kb.append((left, right, level))
-        elif '||' in parts[0]: # For disjunction operator, split them similarly to conjunction at first
-            left = tuple(['*' + c.strip() if c.strip() else c.strip() for c in parts[0].split('||')]) # Remark disjunction parameter with a '*' symbol
-            right = parts[1].strip()
-            kb.append((left, right, level)) 
-        elif '~' in parts[0]: # For negation operator
-            fact = parts[0].strip('~').strip # Strip negation component
-            if fact:
-                kb.append(fact, False, level) # Append false value to kb      
-        else: # Neither conjunction nor disjunction, just strip left and right component by parts with the operator symbol in between
-            left = tuple(c.strip() for c in parts[0].split('=>'))
-            right = parts[1].strip()
-            kb.append((left, right, level))
-    elif '<=' in part: # Deduction Operator
-        parts = part.split('<=', 1)  # Split only once at the first occurrence
-        if '&' in parts[1]: # For conjunction operator, strip right component by parts with & symbol in between, parts at index 1 is the left component
-            right = tuple([c.strip() for c in parts[1].split('&')])
-            left = parts[0].strip()
-            kb.append((right, left), level)
-        elif '||' in parts[1]: # For disjunction operator, split them similarly to conjunction at first
-            right = tuple(['*' + c.strip() if c.strip() else c.strip() for c in parts[1].split('||')]) # Remark disjunction parameter with a '*' symbol
-            left = parts[0].strip()
-            kb.append((right, left), level)
-        elif '~' in parts[1]: # For negation operator
-            fact = parts[0].strip('~').strip # Strip negation component
-            if fact:
-                kb.append(fact, False, level) # Append false value to kb
-        else: # Neither conjunction nor disjunction, just strip right and left component by parts with the operator symbol in between
-            right = tuple(c.strip() for c in parts[1].split('<='))
-            left = parts[0].strip()
-            kb.append((right, left, level))
-    elif '<->' in part: # Biconditional Operator
-        if '&' in part: # For conjunction operator
-            parts = part.split('<->', 1)  # Split only once at the first occurrence
-            left = tuple([c.strip() for c in parts[0].split('&')])
-            right = parts[1].strip()
-            kb.append((left, right, level))
-            kb.append((tuple(right.split('&')), left, level))  # Add the converse implication to make sure it append both way (implicate then deduct)
-        elif '||' in part: # For disjunction operator
-            parts = part.split('<->', 1)  # Split only once at the first occurrence
-            left = tuple(['*' + c.strip() if c.strip() else c.strip() for c in parts[0].split('||')]) # Remark disjunction parameter with a '*' symbol
-            right = parts[1].strip()
-            kb.append((left, right, level))
-            kb.append((tuple(right.split('||')), left, level))  # Add the converse implication to make sure it append both way (implicate then deduct)
-        elif '~' in part: # For negation operator
-            fact = part.strip('~').strip # Strip negation component
-            if fact:
-                kb.append(fact, False, level) # Append false value to kb
-        else: # Neither conjunction nor disjunction
-            parts = part.split('<->', 1)  # Split only once at the first occurrence
-            left = tuple([c.strip() for c in parts[0].split('<->')])
-            right = parts[1].strip()
-            kb.append((left, right, level))
-            kb.append((tuple(right.split('<->')), left, level))  # Add the converse implication to make sure it append both way (implicate then deduct)
-    else:
-        facts.add(part)
-        facts.discard('') # Filter out the empty string as the first module (goal state, which returns as null) should not be appended to the facts count
-    return part, facts 
-
-def DPLL_propagate_unit_clauses(kb, facts):
-    # Propagate unit clauses (clauses with a single literal)
-    changed = True
-    while changed: # Repeats the process while changes are being made.
-        changed = False
-        unit_clauses = [clause for clause in kb if len(clause.split('∨')) == 1] # Finds all unit clauses.
-        for clause in unit_clauses:
-            literal = clause.strip() # Strip white space
-            if literal.startswith('¬'):
-                literal = literal[1:] # Remove literal
-                if literal in facts:
-                    continue
-                if literal not in facts:
-                    facts.add('¬' + literal)  # Add negated literal to facts
-                    kb = {cl for cl in kb if literal not in cl}  # Remove satisfied clauses
-                    changed = True
+class LogicalConnective(Enum):
+    """Enumeration of logical connectives with their symbols and descriptions.""" 
+    NEGATION = ('~', 'negation')
+    CONJUNCTION = ('&', 'conjunction')
+    DISJUNCTION = ('||', 'disjunction')
+    IMPLICATION = ('=>', 'implication')
+    BICONDITIONAL = ('<=>', 'biconditional')
+    
+    def __init__(self, symbol: str, description: str):
+        self.symbol = symbol
+        self.description = description
+    
+    @classmethod
+    def get_all_symbols(cls):   # -> Set[str]
+        """Get all logical connective symbols."""
+        return {member.symbol for member in cls}
+    
+    @classmethod
+    def get_operator_pattern(cls):  # -> str
+        """Get regex pattern for matching logical operators."""
+        # Escape special characters and join with OR
+        return '|'.join(re.escape(member.symbol) for member in cls)
+    
+class KnowledgeBase:
+    """Class to manage the knowledge base and provide common utility functions."""
+    
+    def __init__(self, clauses: List[str]):
+        self.clauses = clauses
+        self.symbols = self._extract_symbols()
+        self.horn_clauses = self._parse_horn_clauses()
+        self.is_horn_form = self._check_horn_form()
+        
+    def _extract_symbols(self):  # -> Set[str]
+        """Extract all unique propositional symbols from the KB."""
+        # Get pattern for all operators
+        op_pattern = LogicalConnective.get_operator_pattern()
+        # Split by operators and filter out empty strings
+        symbols = set()
+        for clause in self.clauses:
+            # Replace operators with spaces
+            cleaned = re.sub(op_pattern, ' ', clause)
+            
+            # Extract symbols (alphanumeric strings)
+            symbols.update(token for token in cleaned.split() if token.isalnum() and not token.isnumeric())
+        return symbols
+    
+    def _check_horn_form(self): # -> bool
+        """Check if the knowledge base is in Horn form."""
+        for clause in self.clauses:
+            if '||' in clause or '<=>' in clause:
+                return False
+            if '=>' in clause:
+                antecedent = clause.split('=>')[0]
+                if '~' in antecedent:
+                    return False
+        return True
+    
+    def _parse_horn_clauses(self): # -> List[Tuple[List[str], str]]
+        """Parse all clauses from the knowledge base into premises and conclusions."""
+        parsed_clauses = []
+        for clause in self.clauses:
+            if '=>' in clause:
+                premises, conclusion = clause.split('=>')
+                premises = premises.split('&') if '&' in premises else [premises]
+                parsed_clauses.append(
+                    ([premise.strip() for premise in premises], 
+                    conclusion.strip())
+                )
             else:
-                if '¬' + literal in facts:
-                    continue
-                if literal not in facts:
-                    facts.add(literal)  # Add literal to facts
-                    kb = {cl for cl in kb if '¬' + literal not in cl}  # Remove satisfied clauses
-                    changed = True
-    return kb, facts
+                parsed_clauses.append(([], clause.strip()))
+        return parsed_clauses
+    
+    def normalize_expression(self, expr: str): # -> str
+        """Convert expression to Python-evaluatable boolean expression."""
+        expr = expr.replace(LogicalConnective.NEGATION.symbol, ' not ')
+        expr = expr.replace(LogicalConnective.CONJUNCTION.symbol, ' and ')
+        expr = expr.replace(LogicalConnective.DISJUNCTION.symbol, ' or ')
+        # Handle implications and biconditionals specially during evaluation
+        return expr
+
+
+class InferenceEngine(ABC):
+    """Abstract base class for inference engines."""
+    
+    def __init__(self, clauses: List[str]):
+        self.kb = KnowledgeBase(clauses)
+        
+        # Only check Horn form requirement for chaining methods
+        if not isinstance(self, TruthTable):
+            if not self.kb.is_horn_form:
+                print("Error: Knowledge base is not in Horn form. Only TT method can be used.")
+                sys.exit(1)
+            # raise ValueError(f"Knowledge base must be in Horn form. Only TT method can be used.") 
+    
+    @abstractmethod
+    def solve(self, query: str): # -> Tuple[bool, Union[int, List[str]]]
+        """Solve the inference problem."""
+        pass
+
+
+class TruthTable(InferenceEngine):
+    """Truth table checking algorithm implementation."""
+    
+    def _evaluate_clause(self, clause: str, model: Dict[str, bool]): #  -> bool
+        """Evaluate a single clause given a model."""
+        # Replace symbols with their boolean values
+        expr = clause
+        for symbol, value in model.items():
+            expr = re.sub(r'\b' + re.escape(symbol) + r'\b', str(value), expr)
+        
+        try:
+            # Handle implications
+            while '=>' in expr:
+                # Find the leftmost implication
+                parts = expr.split('=>', 1)
+                if len(parts) != 2:
+                    return False
+                
+                left = self._evaluate_boolean_expr(parts[0])
+                right = self._evaluate_boolean_expr(parts[1])
+                
+                # Apply implication logic: not left or right
+                result = (not left) or right
+                expr = str(result)
+            
+            return self._evaluate_boolean_expr(expr)
+            
+        except Exception as e:
+            print(f"Error evaluating clause '{clause}': {str(e)}")
+            return False
+    
+    def _evaluate_boolean_expr(self, expr: str): # -> bool
+        """Evaluate a boolean expression."""
+        # Clean up the expression
+        expr = expr.strip()
+        
+        # Replace operators with Python boolean operators
+        expr = expr.replace('&', ' and ').replace('|', ' or ').replace('~', ' not ')
+        
+        try:
+            return bool(eval(expr))
+        except:
+            return False
+    
+    def solve(self, query: str): #  -> Tuple[bool, int]
+        """Solve using truth table method."""
+        models_count = 0
+        symbols = sorted(list(self.kb.symbols))
+        total_models = 2 ** len(symbols)
+        
+        for i in range(total_models):
+            # Create model
+            model = {}
+            for j, symbol in enumerate(symbols):
+                model[symbol] = bool((i >> j) & 1)
+            
+            # Check if model satisfies KB and query
+            kb_satisfied = all(self._evaluate_clause(clause, model) for clause in self.kb.clauses)
+            if kb_satisfied and self._evaluate_clause(query, model):
+                models_count += 1
+        
+        return models_count > 0, models_count
+    
+class ChainingSolver(InferenceEngine):
+    """Base class for chaining algorithms with common functionality."""
+    
+    def __init__(self, clauses: List[str]):
+        super().__init__(clauses)
+        # self.entailed = set()
+        self.entailed = []
+        
+    def _get_facts(self): # -> Set[str]
+        """Get initial facts from the knowledge base."""
+        return {conclusion for premises, conclusion in self.kb.horn_clauses if not premises}
+
+class ForwardChaining(ChainingSolver):
+    """Forward chaining algorithm implementation."""
+    
+    def _find_next_conclusion(self, rules, known_facts):
+        """
+        Find the next conclusion that can be derived, prioritizing simpler rules.
+        """
+        candidate_rules = []
+        
+        # First, gather all rules whose premises are satisfied
+        for premises, conclusion in rules:
+            if conclusion not in known_facts and all(p in known_facts for p in premises):
+                # Calculate rule complexity (number of premises)
+                complexity = len(premises)
+                candidate_rules.append((complexity, premises, conclusion))
+        
+        if not candidate_rules:
+            return None, None
+            
+        # Sort by complexity (fewer premises first)
+        candidate_rules.sort(key=lambda x: x[0])
+        _, premises, conclusion = candidate_rules[0]
+        return premises, conclusion
+    
+    def solve(self, query: str):
+        """
+        Implement the forward chaining algorithm to determine if a query can be proven.
+        
+        Args:
+            query: The query to prove
+            
+        Returns:
+            Tuple of (whether query was proven, list of facts derived in order)
+        """
+        # Initialize with facts
+        self.entailed = []
+        facts = self._get_facts()
+        for fact in sorted(facts):
+            self.entailed.append(fact)
+            
+        # Get rules (excluding pure facts)
+        rules = [(premises, conclusion) 
+                for premises, conclusion in self.kb.horn_clauses 
+                if premises]
+        
+        while True:
+            # Find next applicable rule based on current knowledge
+            premises, conclusion = self._find_next_conclusion(rules, self.entailed)
+            
+            if conclusion is None:  # No more rules can be applied
+                break
+                
+            # Apply the rule
+            if conclusion not in self.entailed:
+                self.entailed.append(conclusion)
+            
+            # Remove the used rule to prevent cyclic inference
+            rules.remove((premises, conclusion))
+                
+        return query in self.entailed, self.entailed
+
+
+class BackwardChaining(ChainingSolver):
+    """Backward chaining algorithm implementation."""
+    
+    def _can_prove(self, query: str, visited: Set[str]): # -> bool
+        """Try to prove a query using backward chaining."""
+        if query in visited:
+            return False
+       
+        visited.add(query)
+        # self.entailed.add(query)
+        
+        # Check if query is a fact
+        if query in self._get_facts():
+            if query not in self.entailed:
+                self.entailed.append(query)
+            return True
+        
+        # Try to prove through implications
+        for premises, conclusion in self.kb.horn_clauses:
+            if conclusion == query:
+                if all(self._can_prove(premise, visited.copy()) for premise in premises):
+                    if query not in self.entailed:
+                        self.entailed.append(query)
+                    return True
+        # self.entailed.remove(query)
+        return False
+        
+        
+    def solve(self, query: str): # -> Tuple[bool, List[str]]
+        # self.entailed = set()
+        self.entailed = []
+        result = self._can_prove(query, set())
+        
+        return result, self.entailed
+        
