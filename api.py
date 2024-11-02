@@ -36,7 +36,6 @@ async def process_file(file: UploadFile, method: str = Form(...)):
             result = f'YES: {info_str}'
         else:
             result = "NO"
-
         # Clean up the temporary file
         os.unlink(tmp_file_path)
 
