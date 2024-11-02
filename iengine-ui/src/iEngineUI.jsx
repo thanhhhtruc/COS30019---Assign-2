@@ -268,43 +268,44 @@ const iEngineUI = () => {
   
     return (
       <div className="mt-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Table className="w-6 h-6 text-gray-700" />
-          <h2 className="text-2xl font-semibold text-gray-800">Truth Table</h2>
-        </div>
-        <div className="overflow-x-auto max-h-96">
-          <table className="min-w-full border-collapse bg-white border border-black text-blue-700">
-            <thead className="sticky top-0 bg-blue-900 text-white">
-                <tr>
-                  {/* Model columns */}
-                  {truthTable.symbols.map(symbol => (
-                    <th key={symbol} className="p-2 border border-black">{symbol}</th>
-                  ))}
-                  {/* KB clause columns */}
-                  {truthTable.clauses.map((clause, i) => (
-                    <th key={`clause-${i}`} className="p-2 border border-black">{clause}</th>
-                  ))}
-                  {/* Query column */}
-                  <th className="p-2 border border-black">{truthTable.query}</th>
-                </tr>
-              </thead>
+      <div className="flex items-center gap-2 mb-4">
+        <Table className="w-6 h-6 text-gray-700" />
+        <h2 className="text-2xl font-semibold text-gray-800">Truth Table</h2>
+      </div>
+      <div className="relative overflow-x-auto">
+        <div className="max-h-96 overflow-y-auto">
+          <table className="w-full border-collapse">
+            <thead className="bg-blue-900 text-white sticky top-0 z-10">
+              <tr>
+                {/* Model columns */}
+                {truthTable.symbols.map(symbol => (
+                  <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
+                ))}
+                {/* KB clause columns */}
+                {truthTable.clauses.map((clause, i) => (
+                  <th key={`clause-${i}`} className="p-4 border-b border-blue-700 whitespace-nowrap">{clause}</th>
+                ))}
+                {/* Query column */}
+                <th className="p-4 border-b border-blue-700 whitespace-nowrap">{truthTable.query}</th>
+              </tr>
+            </thead>
             <tbody>
               {truthTable.rows.map((row, rowIndex) => (
-                <tr key={rowIndex} className={row.proves_query ? 'bg-green-50' : ''}>
+                <tr key={rowIndex} className={`hover:bg-blue-100 ${row.proves_query ? 'bg-green-50' : ''}`}>
                   {/* Model values */}
                   {truthTable.symbols.map(symbol => (
-                    <td key={symbol} className="p-2 border border-black text-center">
+                    <td key={symbol} className="p-4 border-b border-gray-200 text-center text-black">
                       {row.model[symbol] ? 'T' : 'F'}
                     </td>
                   ))}
                   {/* KB results */}
                   {row.kb_results.map((result, i) => (
-                    <td key={`result-${i}`} className="p-2 border border-black text-center">
+                    <td key={`result-${i}`} className="p-4 border-b border-gray-200 text-center text-black">
                       {result ? 'T' : 'F'}
                     </td>
                   ))}
                   {/* Query result */}
-                  <td className="p-2 border border-black text-center">
+                  <td className="p-4 border-b border-gray-200 text-center text-black">
                     {row.query_result ? 'T' : 'F'}
                   </td>
                 </tr>
@@ -312,14 +313,13 @@ const iEngineUI = () => {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 p-4 bg-blue-900 text-white rounded-lg">
-          <h3 className="font-semibold mb-2">Summary:</h3>
-          <ul className="list-disc list-inside space-y-1">
-            <li>Total Models: {truthTable.summary.total_models}</li>
-            <li>Models Proving Query: {truthTable.summary.proving_models}</li>
-            <li>Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</li>
-          </ul>
-        </div>
+      </div>
+      <div className="mt-4 p-8 bg-gradient-to-b from-sky-400 to-blue-900 text-white rounded-lg text-center">
+        <h3 className="text-4xl font-extrabold mb-4">Summary</h3>
+        <p className="text-2xl font-semibold mb-2">Total Models: {truthTable.summary.total_models}</p>
+        <p className="text-2xl font-semibold mb-2">Models Proving Query: {truthTable.summary.proving_models}</p>
+        <p className="text-2xl font-semibold">Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</p>
+      </div>
       </div>
     );
   };
@@ -327,25 +327,25 @@ const iEngineUI = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
+      <header className="bg-white bg-opacity-30 backdrop-blur-md shadow-lg rounded-lg w-8/12 mx-auto mt-4 z-20 fixed top-0 left-1/2 transform -translate-x-1/2">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">iEngine</h1>
         </div>
       </header>
 
       {/* Banner Section */}
-      <div className="bg-gradient-to-b from-sky-400 to-blue-900 text-white text-center py-16">
+      <div className="bg-gradient-to-b from-sky-400 to-blue-900 text-white text-center py-32">
         <h2 className="text-6xl font-extrabold">Inference Engine</h2>
         <p className="text-3xl font-semibold mt-2">for Propositional Logic</p>
       </div>
 
       {/* Main Content */}
       <div className="flex-grow bg-gray-100 py-12">
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-7.5xl mx-auto px-4">
           <div className="bg-white p-8 rounded-lg shadow-lg">
             {/* File Upload Section */}
             <div className="mb-8">
-              <h2 className="text-3xl font-semibold mb-4 text-gray-800">Upload Your File</h2>
+              <h2 className="text-3xl font-semibold mb-4 text-gray-800">Upload Test File</h2>
               <div className="border-2 border-dashed border-blue-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
                 <input
                   type="file"
@@ -369,7 +369,7 @@ const iEngineUI = () => {
             {/* Method Selection */}
             <div className="mb-8">
               <h2 className="text-3xl font-semibold mb-4 text-gray-800">Select Method</h2>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                 {['TT', 'FC', 'BC'].map((m) => (
                   <button
                     key={m}
