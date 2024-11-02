@@ -52,7 +52,7 @@ const iEngineUI = () => {
       const data = await response.text();
       setResult(data);
     } catch (err) {
-      setError('Error processing file: ' + err.message);
+      setError('Error processing file: The provided knowledge base is not a Horn KB, so forward chaining (FC) and backward chaining (BC) methods cannot be performed.');
     } finally {
       setIsLoading(false);
     }
