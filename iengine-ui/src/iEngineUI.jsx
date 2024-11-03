@@ -272,11 +272,12 @@ const iEngineUI = () => {
         <Table className="w-6 h-6 text-gray-700" />
         <h2 className="text-2xl font-semibold text-gray-800">Truth Table</h2>
       </div>
-      <div className="relative overflow-x-auto">
-        <div className="max-h-96 overflow-y-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-blue-900 text-white sticky top-0 z-10">
+      <div className="relative overflow-x-auto rounded-lg">
+        <div className="max-h-96 overflow-y-auto rounded-lg">
+          <table className="w-full border-collapse rounded-lg">
+            <thead className="bg-blue-900 text-white sticky top-0 z-10 rounded-t-lg">
               <tr>
+              <th className="p-4 border-b border-blue-700 whitespace-nowrap">Module ID</th>
                 {/* Model columns */}
                 {truthTable.symbols.map(symbol => (
                   <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
@@ -292,6 +293,7 @@ const iEngineUI = () => {
             <tbody>
               {truthTable.rows.map((row, rowIndex) => (
                 <tr key={rowIndex} className={`hover:bg-blue-100 ${row.proves_query ? 'bg-green-50' : ''}`}>
+                  <td className="p-4 border-b border-gray-200 text-center text-black">{rowIndex + 1}</td>
                   {/* Model values */}
                   {truthTable.symbols.map(symbol => (
                     <td key={symbol} className="p-4 border-b border-gray-200 text-center text-black">
@@ -314,11 +316,11 @@ const iEngineUI = () => {
           </table>
         </div>
       </div>
-      <div className="mt-4 p-8 bg-gradient-to-b from-sky-400 to-blue-900 text-white rounded-lg text-center">
-        <h3 className="text-4xl font-extrabold mb-4">Summary</h3>
-        <p className="text-2xl font-semibold mb-2">Total Models: {truthTable.summary.total_models}</p>
-        <p className="text-2xl font-semibold mb-2">Models Proving Query: {truthTable.summary.proving_models}</p>
-        <p className="text-2xl font-semibold">Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</p>
+      <div className="mt-4 p-4 bg-gradient-to-b from-sky-400 to-blue-900 text-white rounded-lg text-center">
+        <h3 className="text-2xl font-extrabold mb-2">Summary</h3>
+        <p className="text-lg font-semibold mb-1">Total Models: {truthTable.summary.total_models}</p>
+        <p className="text-lg font-semibold mb-1">Models Proving Query: {truthTable.summary.proving_models}</p>
+        <p className="text-lg font-semibold">Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</p>
       </div>
       </div>
     );
