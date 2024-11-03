@@ -31,42 +31,6 @@ const iEngineUI = () => {
     setTruthTable(null);
   };
 
-  // const processFile = async () => {
-  //   if (!file || !method) {
-  //     setError('Please select both a file and a method');
-  //     return;
-  //   }
-
-  //   setIsLoading(true);
-  //   setError('');
-
-  //   try {
-  //     const formData = new FormData();
-  //     formData.append('file', file);
-  //     formData.append('method', method);
-
-  //     const response = await fetch('/api/process', {
-  //       method: 'POST',
-  //       body: formData,
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error('Failed to process file');
-  //     }
-
-  //     const data = await response.json();
-  //     setResult(data.result);
-  //     if (data.truthTable) {
-  //       setTruthTable(data.truthTable);
-  //     }
-  //   } catch (err) {
-  //     setError('Error processing file: ' + err.message);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-
   const processFile = async () => {
     if (!file || !method) {
       setError('Please select both a file and a method');
@@ -111,9 +75,79 @@ const iEngineUI = () => {
     }
   };
 
+
+
+  // const renderTruthTable = () => {
+  //   if (!truthTable) return null;
+
+  //   return (
+  //     <div className="mt-8">
+  //       <div className="flex items-center gap-2 mb-4">
+  //         <Table className="w-6 h-6 text-gray-700" />
+  //         <h2 className="text-2xl font-semibold text-gray-800">Truth Table</h2>
+  //       </div>
+  //       <div className="relative overflow-x-auto rounded-lg">
+  //         <div className="max-h-96 overflow-y-auto rounded-lg">
+  //           <table className="w-full border-collapse rounded-lg">
+  //             <thead className="bg-blue-900 text-white sticky top-0 z-10 rounded-t-lg">
+  //               <tr>
+  //                 <th className="p-4 border-b border-blue-700 whitespace-nowrap">Model ID</th>
+  //                 {/* Model columns */}
+  //                 {truthTable.symbols.map(symbol => (
+  //                   <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
+  //                 ))}
+  //                 {/* KB clause columns */}
+  //                 {truthTable.clauses.map((clause, i) => (
+  //                   <th key={`clause-${i}`} className="p-4 border-b border-blue-700 whitespace-nowrap">{clause}</th>
+  //                 ))}
+  //                 {/* Query column */}
+  //                 <th className="p-4 border-b border-blue-700 whitespace-nowrap">{truthTable.query}</th>
+  //               </tr>
+  //             </thead>
+  //             <tbody>
+  //               {truthTable.rows.map((row, rowIndex) => (
+  //                 <tr key={rowIndex} className={`hover:bg-blue-100 ${row.proves_query ? 'bg-green-50' : ''}`}>
+  //                   <td className="p-4 border-b border-gray-200 text-center text-black">{rowIndex + 1}</td>
+  //                   {/* Model values */}
+  //                   {truthTable.symbols.map(symbol => (
+  //                     <td key={symbol} className="p-4 border-b border-gray-200 text-center text-black">
+  //                       {row.model[symbol] ? 'T' : 'F'}
+  //                     </td>
+  //                   ))}
+  //                   {/* KB results */}
+  //                   {row.kb_results.map((result, i) => (
+  //                     <td key={`result-${i}`} className="p-4 border-b border-gray-200 text-center text-black">
+  //                       {result ? 'T' : 'F'}
+  //                     </td>
+  //                   ))}
+  //                   {/* Query result */}
+  //                   <td className="p-4 border-b border-gray-200 text-center text-black">
+  //                     {row.query_result ? 'T' : 'F'}
+  //                   </td>
+  //                 </tr>
+  //               ))}
+  //             </tbody>
+  //           </table>
+  //         </div>
+  //       </div>
+  //       <div className="mt-4 p-4 bg-gradient-to-b from-sky-400 to-blue-900 text-white rounded-lg text-center">
+  //         <h3 className="text-2xl font-extrabold mb-2">Summary</h3>
+  //         <p className="text-lg font-semibold mb-1">Total Models: {truthTable.summary.total_models}</p>
+  //         <p className="text-lg font-semibold mb-1">Models Proving Query: {truthTable.summary.proving_models}</p>
+  //         <p className="text-lg font-semibold">Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</p>
+  //       </div>
+  //     </div>
+  //   );
+  // };
+
+
+
   const renderTruthTable = () => {
     if (!truthTable) return null;
-
+  
+    // Extract symbols from truth table data
+    const symbols = truthTable.symbols || [];
+    
     return (
       <div className="mt-8">
         <div className="flex items-center gap-2 mb-4">
@@ -127,35 +161,55 @@ const iEngineUI = () => {
                 <tr>
                   <th className="p-4 border-b border-blue-700 whitespace-nowrap">Model ID</th>
                   {/* Model columns */}
-                  {truthTable.symbols.map(symbol => (
-                    <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
+                  {symbols.map(symbol => (
+                    <th 
+                      key={symbol} 
+                      className="p-4 border-b border-blue-700 whitespace-nowrap"
+                    >
+                      {symbol}
+                    </th>
                   ))}
                   {/* KB clause columns */}
                   {truthTable.clauses.map((clause, i) => (
-                    <th key={`clause-${i}`} className="p-4 border-b border-blue-700 whitespace-nowrap">{clause}</th>
+                    <th 
+                      key={`clause-${i}`} 
+                      className="p-4 border-b border-blue-700 whitespace-nowrap"
+                    >
+                      {clause}
+                    </th>
                   ))}
                   {/* Query column */}
-                  <th className="p-4 border-b border-blue-700 whitespace-nowrap">{truthTable.query}</th>
+                  <th className="p-4 border-b border-blue-700 whitespace-nowrap bg-purple-700">
+                    {truthTable.query}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {truthTable.rows.map((row, rowIndex) => (
                   <tr key={rowIndex} className={`hover:bg-blue-100 ${row.proves_query ? 'bg-green-50' : ''}`}>
-                    <td className="p-4 border-b border-gray-200 text-center text-black">{rowIndex + 1}</td>
+                    <td className="p-4 border-b border-gray-200 text-center text-black">
+                      {rowIndex + 1}
+                    </td>
                     {/* Model values */}
-                    {truthTable.symbols.map(symbol => (
-                      <td key={symbol} className="p-4 border-b border-gray-200 text-center text-black">
+                    {symbols.map(symbol => (
+                      <td 
+                        key={symbol} 
+                        className="p-4 border-b border-gray-200 text-center text-black"
+                      >
                         {row.model[symbol] ? 'T' : 'F'}
                       </td>
                     ))}
                     {/* KB results */}
                     {row.kb_results.map((result, i) => (
-                      <td key={`result-${i}`} className="p-4 border-b border-gray-200 text-center text-black">
+                      <td 
+                        key={`result-${i}`} 
+                        className="p-4 border-b border-gray-200 text-center text-black"
+                      >
                         {result ? 'T' : 'F'}
                       </td>
                     ))}
                     {/* Query result */}
-                    <td className="p-4 border-b border-gray-200 text-center text-black">
+                    <td className="p-4 border-b border-gray-200 text-center text-black bg-purple-50">
                       {row.query_result ? 'T' : 'F'}
                     </td>
                   </tr>
@@ -168,11 +222,16 @@ const iEngineUI = () => {
           <h3 className="text-2xl font-extrabold mb-2">Summary</h3>
           <p className="text-lg font-semibold mb-1">Total Models: {truthTable.summary.total_models}</p>
           <p className="text-lg font-semibold mb-1">Models Proving Query: {truthTable.summary.proving_models}</p>
-          <p className="text-lg font-semibold">Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</p>
+          <p className="text-lg font-semibold">
+            Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB
+          </p>
         </div>
       </div>
     );
   };
+  
+
+
 
   return (
     <div className="min-h-screen flex flex-col">
