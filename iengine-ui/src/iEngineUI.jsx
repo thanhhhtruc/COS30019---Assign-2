@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowRight, Upload, Terminal, AlertCircle, Loader, Table } from 'lucide-react';
-import ChainViz from './ChainViz';  // Add this import
+import ChainViz from './ChainViz';  
 
 const iEngineUI = () => {
   const [file, setFile] = useState(null);

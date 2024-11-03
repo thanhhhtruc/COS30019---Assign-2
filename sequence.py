@@ -346,7 +346,7 @@ class BackwardChaining(ChainingSolver):
                 required_premises = []
                 
                 for premise in premises:
-                    if not self._can_prove(premise, depth + 1, visited.copy()):
+                    if not self._can_prove(premise, visited.copy()):
                         all_premises_proven = False
                         break
                     required_premises.append(premise)
