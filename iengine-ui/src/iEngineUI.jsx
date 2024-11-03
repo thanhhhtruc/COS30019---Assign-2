@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowRight, Upload, Terminal, AlertCircle, Loader, Table } from 'lucide-react';
-import ChainViz from './ChainViz';  
+import ChainViz from './ChainViz';
 
 const iEngineUI = () => {
   const [file, setFile] = useState(null);
@@ -92,7 +92,7 @@ const iEngineUI = () => {
 
       const data = await response.json();
       setResult(data.result);
-      
+
       // Format the chain result for visualization
       if ((method === 'FC' || method === 'BC') && data.result.includes('YES:')) {
         const facts = data.result.split('YES:')[1].trim();
@@ -100,7 +100,7 @@ const iEngineUI = () => {
       } else {
         setChainResult('');
       }
-      
+
       if (data.truthTable) {
         setTruthTable(data.truthTable);
       }
@@ -181,8 +181,8 @@ const iEngineUI = () => {
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">iEngine</h1>
           <div className="flex items-center gap-4">
-            <span className="symbol animate-bounce">¬</span>
-            <span className="symbol animate-spin">∧</span>
+            <span className="symbol animate-spin">¬</span>
+            <span className="symbol animate-bounce">∧</span>
             <span className="symbol animate-pulse">∨</span>
             <span className="symbol animate-bounce">⇒</span>
             <span className="symbol animate-spin">⇔</span>
@@ -302,11 +302,12 @@ const iEngineUI = () => {
               </div>
             )}
 
-            {/* Chain Visualization - Updated */}
+            {/* Chain Visualization */}
             {chainResult && (method === 'FC' || method === 'BC') && (
-              <ChainViz 
-                type={method} 
+              <ChainViz
+                type={method}
                 result={chainResult}
+                knowledgeBase={fileContent} // Pass the KB content
               />
             )}
 
@@ -318,18 +319,18 @@ const iEngineUI = () => {
 
       {/* Footer */}
       <footer className="bg-white bg-opacity-30 backdrop-blur-md shadow-lg rounded-lg py-8 mt-8">
-  <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
-    <div className="text-center md:text-left mb-4 md:mb-0">
-      <h2 className="text-2xl font-bold text-gray-800">iEngine</h2>
-      <p className="text-gray-600">Developed by Truong Thien and Thanh Truc</p>
-    </div>
-    <div className="flex space-x-4">
-      <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Privacy Policy</a>
-      <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Terms of Service</a>
-      <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Contact Us</a>
-    </div>
-  </div>
-</footer>
+        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
+          <div className="text-center md:text-left mb-4 md:mb-0">
+            <h2 className="text-2xl font-bold text-gray-800">iEngine</h2>
+            <p className="text-gray-600">Developed by Truong Thien and Thanh Truc</p>
+          </div>
+          <div className="flex space-x-4">
+            <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Privacy Policy</a>
+            <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Terms of Service</a>
+            <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Contact Us</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
