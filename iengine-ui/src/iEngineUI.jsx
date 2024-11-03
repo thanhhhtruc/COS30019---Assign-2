@@ -113,7 +113,11 @@ const iEngineUI = () => {
 
   const renderTruthTable = () => {
     if (!truthTable) return null;
-
+  
+    // Remove duplicated columns
+    const uniqueSymbols = [...new Set(truthTable.symbols)];
+    const uniqueClauses = [...new Set(truthTable.clauses)];
+  
     return (
       <div className="mt-8">
         <div className="flex items-center gap-2 mb-4">
@@ -127,23 +131,23 @@ const iEngineUI = () => {
                 <tr>
                   <th className="p-4 border-b border-blue-700 whitespace-nowrap">Model ID</th>
                   {/* Model columns */}
-                  {truthTable.symbols.map(symbol => (
+                  {uniqueSymbols.map(symbol => (
                     <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
                   ))}
                   {/* KB clause columns */}
-                  {truthTable.clauses.map((clause, i) => (
+                  {uniqueClauses.map((clause, i) => (
                     <th key={`clause-${i}`} className="p-4 border-b border-blue-700 whitespace-nowrap">{clause}</th>
                   ))}
                   {/* Query column */}
-                  <th className="p-4 border-b border-blue-700 whitespace-nowrap">{truthTable.query}</th>
+                  <th className="p-4 border-b border-blue-700 whitespace-nowrap bg-green-600">{truthTable.query}</th>
                 </tr>
               </thead>
               <tbody>
                 {truthTable.rows.map((row, rowIndex) => (
-                  <tr key={rowIndex} className={`hover:bg-blue-100 ${row.proves_query ? 'bg-green-50' : ''}`}>
+                  <tr key={rowIndex} className="hover:bg-blue-100">
                     <td className="p-4 border-b border-gray-200 text-center text-black">{rowIndex + 1}</td>
                     {/* Model values */}
-                    {truthTable.symbols.map(symbol => (
+                    {uniqueSymbols.map(symbol => (
                       <td key={symbol} className="p-4 border-b border-gray-200 text-center text-black">
                         {row.model[symbol] ? 'T' : 'F'}
                       </td>
@@ -155,7 +159,7 @@ const iEngineUI = () => {
                       </td>
                     ))}
                     {/* Query result */}
-                    <td className="p-4 border-b border-gray-200 text-center text-black">
+                    <td className="p-4 border-b border-gray-200 text-center text-black bg-green-600">
                       {row.query_result ? 'T' : 'F'}
                     </td>
                   </tr>
