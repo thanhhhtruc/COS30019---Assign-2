@@ -125,7 +125,7 @@ const iEngineUI = () => {
             <table className="w-full border-collapse rounded-lg">
               <thead className="bg-blue-900 text-white sticky top-0 z-10 rounded-t-lg">
                 <tr>
-                  <th className="p-4 border-b border-blue-700 whitespace-nowrap">Module ID</th>
+                  <th className="p-4 border-b border-blue-700 whitespace-nowrap">Model ID</th>
                   {/* Model columns */}
                   {truthTable.symbols.map(symbol => (
                     <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
