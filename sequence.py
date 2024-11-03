@@ -220,88 +220,27 @@ class TruthTable(InferenceEngine):
                 truth_table['summary']['proving_models'])
 
 
-
-
-
-
-
-
-
-
-# class TruthTable(InferenceEngine):
-#     """Truth table checking algorithm implementation."""
-    
-#     def _evaluate_clause(self, clause: str, model: Dict[str, bool]): #  -> bool
-#         """Evaluate a single clause given a model."""
-#         # Replace symbols with their boolean values
-#         expr = clause
-#         for symbol, value in model.items():
-#             expr = re.sub(r'\b' + re.escape(symbol) + r'\b', str(value), expr)
-        
-#         try:
-#             # Handle implications
-#             while '=>' in expr:
-#                 # Find the leftmost implication
-#                 parts = expr.split('=>', 1)
-#                 if len(parts) != 2:
-#                     return False
-                
-#                 left = self._evaluate_boolean_expr(parts[0])
-#                 right = self._evaluate_boolean_expr(parts[1])
-                
-#                 # Apply implication logic: not left or right
-#                 result = (not left) or right
-#                 expr = str(result)
-            
-#             return self._evaluate_boolean_expr(expr)
-            
-#         except Exception as e:
-#             print(f"Error evaluating clause '{clause}': {str(e)}")
-#             return False
-    
-#     def _evaluate_boolean_expr(self, expr: str): # -> bool
-#         """Evaluate a boolean expression."""
-#         # Clean up the expression
-#         expr = expr.strip()
-        
-#         # Replace operators with Python boolean operators
-#         expr = expr.replace('&', ' and ').replace('|', ' or ').replace('~', ' not ')
-        
-#         try:
-#             return bool(eval(expr))
-#         except:
-#             return False
-    
-#     def solve(self, query: str): #  -> Tuple[bool, int]
-#         """Solve using truth table method."""
-#         models_count = 0
-#         symbols = sorted(list(self.kb.symbols))
-#         total_models = 2 ** len(symbols)
-        
-#         for i in range(total_models):
-#             # Create model
-#             model = {}
-#             for j, symbol in enumerate(symbols):
-#                 model[symbol] = bool((i >> j) & 1)
-            
-#             # Check if model satisfies KB and query
-#             kb_satisfied = all(self._evaluate_clause(clause, model) for clause in self.kb.clauses)
-#             if kb_satisfied and self._evaluate_clause(query, model):
-#                 models_count += 1
-        
-#         return models_count > 0, models_count
     
 class ChainingSolver(InferenceEngine):
     """Base class for chaining algorithms with common functionality."""
     
     def __init__(self, clauses: List[str]):
         super().__init__(clauses)
-        # self.entailed = set()
         self.entailed = []
+        self.steps = [] # Track reasoning steps
         
     def _get_facts(self): # -> Set[str]
         """Get initial facts from the knowledge base."""
         return {conclusion for premises, conclusion in self.kb.horn_clauses if not premises}
+    
+    def _add_step(self, fact: str, reasoning: str, known_facts: List[str] = None):
+        """Add a reasoning step with explanation."""
+        step = {
+            'fact': fact,
+            'reasoning': reasoning,
+            'known_facts': known_facts or []
+        }
+        self.steps.append(step)
 
 class ForwardChaining(ChainingSolver):
     """Forward chaining algorithm implementation."""
@@ -339,9 +278,17 @@ class ForwardChaining(ChainingSolver):
         """
         # Initialize with facts
         self.entailed = []
+        self.steps = []
+        
+        # Initialize with facts
         facts = self._get_facts()
         for fact in sorted(facts):
             self.entailed.append(fact)
+            self._add_step(
+                fact=fact,
+                reasoning="Initial fact from knowledge base",
+                known_facts=self.entailed[:-1]
+            )
             
         # Get rules (excluding pure facts)
         rules = [(premises, conclusion) 
@@ -358,6 +305,11 @@ class ForwardChaining(ChainingSolver):
             # Apply the rule
             if conclusion not in self.entailed:
                 self.entailed.append(conclusion)
+                self._add_step(
+                    fact=conclusion,
+                    reasoning=f"Derived using: {' AND '.join(premises)}",
+                    known_facts=self.entailed[:-1]
+                )
             
             # Remove the used rule to prevent cyclic inference
             rules.remove((premises, conclusion))
@@ -374,28 +326,61 @@ class BackwardChaining(ChainingSolver):
             return False
        
         visited.add(query)
-        # self.entailed.add(query)
         
         # Check if query is a fact
         if query in self._get_facts():
+            self._add_step(
+                fact=query,
+                reasoning="Known fact from knowledge base",
+                known_facts=self.entailed
+            )
             if query not in self.entailed:
                 self.entailed.append(query)
             return True
         
+        
         # Try to prove through implications
         for premises, conclusion in self.kb.horn_clauses:
             if conclusion == query:
-                if all(self._can_prove(premise, visited.copy()) for premise in premises):
+                all_premises_proven = True
+                required_premises = []
+                
+                for premise in premises:
+                    if not self._can_prove(premise, depth + 1, visited.copy()):
+                        all_premises_proven = False
+                        break
+                    required_premises.append(premise)
+                
+                if all_premises_proven:
+                    self._add_step(
+                        fact=query,
+                        reasoning=f"Proved using: {' AND '.join(required_premises)}",
+                        known_facts=self.entailed
+                    )
                     if query not in self.entailed:
                         self.entailed.append(query)
                     return True
-        # self.entailed.remove(query)
+        
+        # # Try to prove through implications
+        # for premises, conclusion in self.kb.horn_clauses:
+        #     if conclusion == query:
+        #         if all(self._can_prove(premise, visited.copy()) for premise in premises):
+        #             if query not in self.entailed:
+        #                 self.entailed.append(query)
+        #             return True
         return False
         
         
     def solve(self, query: str): # -> Tuple[bool, List[str]]
         # self.entailed = set()
         self.entailed = []
+        self.steps = []
+        # Add initial goal step
+        self._add_step(
+            fact=query,
+            reasoning="Initial goal to prove",
+            known_facts=[]
+        )
         result = self._can_prove(query, set())
         
         return result, self.entailed
