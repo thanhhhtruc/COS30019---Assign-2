@@ -271,26 +271,26 @@ const ChainViz = ({ type, result }) => {
             disabled={currentStep === 0}
             className="p-2 rounded-lg bg-white shadow hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <SkipBack className="w-5 h-5" />
+            <SkipBack className="w-5 h-5 text-black" />
           </button>
           <button
             onClick={handlePlayPause}
             className="p-2 rounded-lg bg-white shadow hover:bg-gray-50"
           >
-            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            {isPlaying ? <Pause className="w-5 h-5 text-black" /> : <Play className="w-5 h-5 text-black" />}
           </button>
           <button
             onClick={handleStepForward}
             disabled={currentStep === steps.length - 1}
             className="p-2 rounded-lg bg-white shadow hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <SkipForward className="w-5 h-5" />
+            <SkipForward className="w-5 h-5 text-black" />
           </button>
           <button
             onClick={handleReset}
             className="p-2 rounded-lg bg-white shadow hover:bg-gray-50"
           >
-            <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-5 h-5 text-black" />
           </button>
         </div>
         
