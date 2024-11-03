@@ -265,63 +265,63 @@ const iEngineUI = () => {
 
   const renderTruthTable = () => {
     if (!truthTable) return null;
-  
+
     return (
       <div className="mt-8">
-      <div className="flex items-center gap-2 mb-4">
-        <Table className="w-6 h-6 text-gray-700" />
-        <h2 className="text-2xl font-semibold text-gray-800">Truth Table</h2>
-      </div>
-      <div className="relative overflow-x-auto rounded-lg">
-        <div className="max-h-96 overflow-y-auto rounded-lg">
-          <table className="w-full border-collapse rounded-lg">
-            <thead className="bg-blue-900 text-white sticky top-0 z-10 rounded-t-lg">
-              <tr>
-              <th className="p-4 border-b border-blue-700 whitespace-nowrap">Module ID</th>
-                {/* Model columns */}
-                {truthTable.symbols.map(symbol => (
-                  <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
-                ))}
-                {/* KB clause columns */}
-                {truthTable.clauses.map((clause, i) => (
-                  <th key={`clause-${i}`} className="p-4 border-b border-blue-700 whitespace-nowrap">{clause}</th>
-                ))}
-                {/* Query column */}
-                <th className="p-4 border-b border-blue-700 whitespace-nowrap">{truthTable.query}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {truthTable.rows.map((row, rowIndex) => (
-                <tr key={rowIndex} className={`hover:bg-blue-100 ${row.proves_query ? 'bg-green-50' : ''}`}>
-                  <td className="p-4 border-b border-gray-200 text-center text-black">{rowIndex + 1}</td>
-                  {/* Model values */}
-                  {truthTable.symbols.map(symbol => (
-                    <td key={symbol} className="p-4 border-b border-gray-200 text-center text-black">
-                      {row.model[symbol] ? 'T' : 'F'}
-                    </td>
-                  ))}
-                  {/* KB results */}
-                  {row.kb_results.map((result, i) => (
-                    <td key={`result-${i}`} className="p-4 border-b border-gray-200 text-center text-black">
-                      {result ? 'T' : 'F'}
-                    </td>
-                  ))}
-                  {/* Query result */}
-                  <td className="p-4 border-b border-gray-200 text-center text-black">
-                    {row.query_result ? 'T' : 'F'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex items-center gap-2 mb-4">
+          <Table className="w-6 h-6 text-gray-700" />
+          <h2 className="text-2xl font-semibold text-gray-800">Truth Table</h2>
         </div>
-      </div>
-      <div className="mt-4 p-4 bg-gradient-to-b from-sky-400 to-blue-900 text-white rounded-lg text-center">
-        <h3 className="text-2xl font-extrabold mb-2">Summary</h3>
-        <p className="text-lg font-semibold mb-1">Total Models: {truthTable.summary.total_models}</p>
-        <p className="text-lg font-semibold mb-1">Models Proving Query: {truthTable.summary.proving_models}</p>
-        <p className="text-lg font-semibold">Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</p>
-      </div>
+        <div className="relative overflow-x-auto rounded-lg">
+          <div className="max-h-96 overflow-y-auto rounded-lg">
+            <table className="w-full border-collapse rounded-lg">
+              <thead className="bg-blue-900 text-white sticky top-0 z-10 rounded-t-lg">
+                <tr>
+                  <th className="p-4 border-b border-blue-700 whitespace-nowrap">Module ID</th>
+                  {/* Model columns */}
+                  {truthTable.symbols.map(symbol => (
+                    <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
+                  ))}
+                  {/* KB clause columns */}
+                  {truthTable.clauses.map((clause, i) => (
+                    <th key={`clause-${i}`} className="p-4 border-b border-blue-700 whitespace-nowrap">{clause}</th>
+                  ))}
+                  {/* Query column */}
+                  <th className="p-4 border-b border-blue-700 whitespace-nowrap">{truthTable.query}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {truthTable.rows.map((row, rowIndex) => (
+                  <tr key={rowIndex} className={`hover:bg-blue-100 ${row.proves_query ? 'bg-green-50' : ''}`}>
+                    <td className="p-4 border-b border-gray-200 text-center text-black">{rowIndex + 1}</td>
+                    {/* Model values */}
+                    {truthTable.symbols.map(symbol => (
+                      <td key={symbol} className="p-4 border-b border-gray-200 text-center text-black">
+                        {row.model[symbol] ? 'T' : 'F'}
+                      </td>
+                    ))}
+                    {/* KB results */}
+                    {row.kb_results.map((result, i) => (
+                      <td key={`result-${i}`} className="p-4 border-b border-gray-200 text-center text-black">
+                        {result ? 'T' : 'F'}
+                      </td>
+                    ))}
+                    {/* Query result */}
+                    <td className="p-4 border-b border-gray-200 text-center text-black">
+                      {row.query_result ? 'T' : 'F'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="mt-4 p-4 bg-gradient-to-b from-sky-400 to-blue-900 text-white rounded-lg text-center">
+          <h3 className="text-2xl font-extrabold mb-2">Summary</h3>
+          <p className="text-lg font-semibold mb-1">Total Models: {truthTable.summary.total_models}</p>
+          <p className="text-lg font-semibold mb-1">Models Proving Query: {truthTable.summary.proving_models}</p>
+          <p className="text-lg font-semibold">Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</p>
+        </div>
       </div>
     );
   };
@@ -329,14 +329,21 @@ const iEngineUI = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-white bg-opacity-30 backdrop-blur-md shadow-lg rounded-lg w-8/12 mx-auto mt-4 z-20 fixed top-0 left-1/2 transform -translate-x-1/2">
+      <header className="bg-white bg-opacity-30 backdrop-blur-md shadow-lg rounded-full w-8/12 mx-auto mt-4 z-20 fixed top-0 left-1/2 transform -translate-x-1/2">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">iEngine</h1>
+          <div className="flex items-center gap-4">
+            <span className="symbol animate-bounce">¬</span>
+            <span className="symbol animate-spin">∧</span>
+            <span className="symbol animate-pulse">∨</span>
+            <span className="symbol animate-bounce">⇒</span>
+            <span className="symbol animate-spin">⇔</span>
+          </div>
         </div>
       </header>
 
       {/* Banner Section */}
-      <div className="bg-gradient-to-b from-sky-400 to-blue-900 text-white text-center py-32">
+      <div className="bg-gradient-to-b from-sky-400 to-blue-900 text-white text-center py-64">
         <h2 className="text-6xl font-extrabold">Inference Engine</h2>
         <p className="text-3xl font-semibold mt-2">for Propositional Logic</p>
       </div>
@@ -370,7 +377,7 @@ const iEngineUI = () => {
 
             {/* Method Selection */}
             <div className="mb-8">
-              <h2 className="text-3xl font-semibold mb-4 text-gray-800">Select Method</h2>
+              <h2 className="text-3xl font-semibold mb-4 text-gray-800">Select Algorithms</h2>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                 {['TT', 'FC', 'BC'].map((m) => (
                   <button
@@ -454,13 +461,19 @@ const iEngineUI = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-50">
-        <div className="container mx-auto px-6 py-8">
-          <p className="text-center text-gray-600">
-            Developed by Truong Thien and Thanh Truc
-          </p>
-        </div>
-      </footer>
+      <footer className="bg-white bg-opacity-30 backdrop-blur-md shadow-lg rounded-lg py-8 mt-8">
+  <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
+    <div className="text-center md:text-left mb-4 md:mb-0">
+      <h2 className="text-2xl font-bold text-gray-800">iEngine</h2>
+      <p className="text-gray-600">Developed by Truong Thien and Thanh Truc</p>
+    </div>
+    <div className="flex space-x-4">
+      <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Privacy Policy</a>
+      <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Terms of Service</a>
+      <a href="#" className="text-gray-600 hover:text-gray-800 transition-colors">Contact Us</a>
+    </div>
+  </div>
+</footer>
     </div>
   );
 };

@@ -73,3 +73,60 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.symbol {
+  font-size: 2rem;
+  color: #1f2937; /* Tailwind's gray-800 */
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-bounce {
+  animation: bounce 2s infinite;
+}
+
+.animate-spin {
+  animation: spin 2s infinite linear;
+}
+
+.animate-wiggle {
+  animation: wiggle 1s infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
