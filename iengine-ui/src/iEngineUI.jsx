@@ -25,25 +25,22 @@ const iEngineUI = () => {
     reader.readAsText(selectedFile);
   };
 
-  const handleMethodSelect = (selectedMethod) => {
+  const handleMethodSelect = async (selectedMethod) => {
     setMethod(selectedMethod);
     setError('');
     setTruthTable(null);
-  };
 
-  const processFile = async () => {
-    if (!file || !method) {
-      setError('Please select both a file and a method');
+    if (!file) {
+      setError('Please select a file first');
       return;
     }
 
     setIsLoading(true);
-    setError('');
 
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('method', method);
+      formData.append('method', selectedMethod);
 
       const response = await fetch('/api/process', {
         method: 'POST',
@@ -58,7 +55,7 @@ const iEngineUI = () => {
       setResult(data.result);
 
       // Format the chain result for visualization
-      if ((method === 'FC' || method === 'BC') && data.result.includes('YES:')) {
+      if ((selectedMethod === 'FC' || selectedMethod === 'BC') && data.result.includes('YES:')) {
         const facts = data.result.split('YES:')[1].trim();
         setChainResult(`YES:\n${facts}`);  // Format for ChainViz
       } else {
@@ -144,10 +141,10 @@ const iEngineUI = () => {
 
   const renderTruthTable = () => {
     if (!truthTable) return null;
-  
+
     // Extract symbols from truth table data
     const symbols = truthTable.symbols || [];
-    
+
     return (
       <div className="mt-8">
         <div className="flex items-center gap-2 mb-4">
@@ -162,8 +159,8 @@ const iEngineUI = () => {
                   <th className="p-4 border-b border-blue-700 whitespace-nowrap">Model ID</th>
                   {/* Model columns */}
                   {symbols.map(symbol => (
-                    <th 
-                      key={symbol} 
+                    <th
+                      key={symbol}
                       className="p-4 border-b border-blue-700 whitespace-nowrap"
                     >
                       {symbol}
@@ -171,8 +168,8 @@ const iEngineUI = () => {
                   ))}
                   {/* KB clause columns */}
                   {truthTable.clauses.map((clause, i) => (
-                    <th 
-                      key={`clause-${i}`} 
+                    <th
+                      key={`clause-${i}`}
                       className="p-4 border-b border-blue-700 whitespace-nowrap"
                     >
                       {clause}
@@ -192,8 +189,8 @@ const iEngineUI = () => {
                     </td>
                     {/* Model values */}
                     {symbols.map(symbol => (
-                      <td 
-                        key={symbol} 
+                      <td
+                        key={symbol}
                         className="p-4 border-b border-gray-200 text-center text-black"
                       >
                         {row.model[symbol] ? 'T' : 'F'}
@@ -201,8 +198,8 @@ const iEngineUI = () => {
                     ))}
                     {/* KB results */}
                     {row.kb_results.map((result, i) => (
-                      <td 
-                        key={`result-${i}`} 
+                      <td
+                        key={`result-${i}`}
                         className="p-4 border-b border-gray-200 text-center text-black"
                       >
                         {result ? 'T' : 'F'}
@@ -229,12 +226,18 @@ const iEngineUI = () => {
       </div>
     );
   };
-  
+
 
 
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Loading */}
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
       {/* Header */}
       <header className="bg-white bg-opacity-30 backdrop-blur-md shadow-lg rounded-full w-8/12 mx-auto mt-4 z-20 fixed top-0 left-1/2 transform -translate-x-1/2">
         <div className="container mx-auto px-6 py-2 flex justify-between items-center">
@@ -301,27 +304,6 @@ const iEngineUI = () => {
                 ))}
               </div>
             </div>
-
-            {/* Process Button */}
-            <button
-              onClick={processFile}
-              disabled={isLoading}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl 
-                font-medium transition-all transform hover:translate-y-[-2px] hover:shadow-lg
-                disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader className="w-6 h-6 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  Process File
-                  <ArrowRight className="w-6 h-6" />
-                </>
-              )}
-            </button>
 
             {/* Error Message */}
             {error && (
