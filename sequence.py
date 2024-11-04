@@ -211,14 +211,25 @@ class TruthTable(InferenceEngine):
         }
         
         return truth_table
+    
 
     def solve(self, query: str): #  -> Tuple[bool, int]
-        """Solve using truth table method."""
-        # Use get_truth_table to compute result
+        """Solve a propositional logic query using the truth table method.
+    
+        Args:
+            query (str): The logical expression to evaluate against the knowledge base
+            
+        Returns:
+            Tuple[bool, int]: A tuple containing:
+                - bool: Whether the query is entailed by the knowledge base
+                - int: Number of models that prove the query
+        """
+       # Generate complete truth table and extract results
         truth_table = self.get_truth_table(query)
+        
+        # Return whether query is entailed and number of proving models
         return (truth_table['summary']['is_entailed'], 
                 truth_table['summary']['proving_models'])
-
 
     
 class ChainingSolver(InferenceEngine):
