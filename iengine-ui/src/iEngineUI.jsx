@@ -237,7 +237,7 @@ const iEngineUI = () => {
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="bg-white bg-opacity-30 backdrop-blur-md shadow-lg rounded-full w-8/12 mx-auto mt-4 z-20 fixed top-0 left-1/2 transform -translate-x-1/2">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="container mx-auto px-6 py-2 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">iEngine</h1>
           <div className="flex items-center gap-4">
             <span className="symbol animate-spin">¬</span>
