@@ -8,6 +8,7 @@ const iEngineUI = () => {
   const [result, setResult] = useState('');
   const [chainResult, setChainResult] = useState('');
   const [truthTable, setTruthTable] = useState(null);
+  const [dpllSteps, setDpllSteps] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [fileContent, setFileContent] = useState('');
@@ -29,39 +30,59 @@ const iEngineUI = () => {
     setMethod(selectedMethod);
     setError('');
     setTruthTable(null);
-
+    setDpllSteps(null);
+  
     if (!file) {
       setError('Please select a file first');
       return;
     }
-
+  
     setIsLoading(true);
-
+  
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('method', selectedMethod);
-
+  
       const response = await fetch('/api/process', {
         method: 'POST',
         body: formData,
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to process file');
       }
-
+  
       const data = await response.json();
+      console.log("Received data:", data); // Log to check structure
+  
       setResult(data.result);
-
-      // Format the chain result for visualization
-      if ((selectedMethod === 'FC' || selectedMethod === 'BC') && data.result.includes('YES:')) {
+  
+      if (selectedMethod === 'DPLL') {
+        // Ensure dpllSteps is defined and is an array
+        if (data.dpllSteps && Array.isArray(data.dpllSteps)) {
+          const dpllData = {
+            steps: data.dpllSteps.map((step, index) => ({
+              id: index + 1,
+              assignment: step.assignment || {},
+              result: step.result,
+              action: step.action || '',
+              children: step.children || []
+            })),
+            satisfiable: data.satisfiable
+          };
+          setDpllSteps(dpllData);
+        } else {
+          console.error("DPLL steps data is missing or not in the expected format.");
+          setError("DPLL steps data is missing or not in the expected format.");
+        }
+      } else if ((selectedMethod === 'FC' || selectedMethod === 'BC') && data.result.includes('YES:')) {
         const facts = data.result.split('YES:')[1].trim();
-        setChainResult(`YES:\n${facts}`);  // Format for ChainViz
+        setChainResult(`YES:\n${facts}`);
       } else {
         setChainResult('');
       }
-
+  
       if (data.truthTable) {
         setTruthTable(data.truthTable);
       }
@@ -71,6 +92,60 @@ const iEngineUI = () => {
       setIsLoading(false);
     }
   };
+  
+  
+
+  const renderDPLLTree = () => {
+    if (!dpllSteps || !dpllSteps.steps) return null;
+
+    const buildTreeNodes = (steps) => {
+      return steps.map((step, index) => {
+        return (
+          <div key={index} className="border-l-2 pl-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 rounded-full bg-gray-200 text-black">
+                {step.assignment ? `Assign ${Object.entries(step.assignment).map(([var_, val]) => `${var_}=${val}`).join(', ')}` : 'Starting'}
+              </div>
+              {step.result === true ? (
+                <span className="text-green-600">SAT</span>
+              ) : step.result === false ? (
+                <span className="text-red-600">UNSAT - Backtrack</span>
+              ) : (
+                <span className="text-blue-600">Exploring...</span>
+              )}
+            </div>
+            {/* Recursive children nodes */}
+            {step.children && (
+              <div className="pl-8">
+                {buildTreeNodes(step.children)}
+              </div>
+            )}
+          </div>
+        );
+      });
+    };
+
+    return (
+      <div className="mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Terminal className="w-6 h-6 text-gray-700" />
+          <h2 className="text-2xl font-semibold text-gray-800">DPLL Decision Tree</h2>
+        </div>
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden p-4">
+          <div className="overflow-y-auto max-h-96">
+            {buildTreeNodes(dpllSteps.steps)}
+          </div>
+          <div className="p-4 bg-gradient-to-r from-blue-900 to-sky-400 text-white mt-4 rounded-lg">
+            <h3 className="text-xl font-bold mb-2">Final Result</h3>
+            <p className="text-lg">
+              Query is {dpllSteps.satisfiable ? 'entailed' : 'not entailed'} by KB
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
 
 
 
@@ -351,6 +426,8 @@ const iEngineUI = () => {
                 knowledgeBase={fileContent} // Pass the KB content
               />
             )}
+
+            {method === 'DPLL' && renderDPLLTree()}
 
             {/* Truth Table Section */}
             {renderTruthTable()}
