@@ -92,26 +92,23 @@ class KnowledgeBase:
 
 class InferenceEngine(ABC):
     """Abstract base class for inference engines."""
-    
+
     def __init__(self, clauses: List[str]):
-        # First check if this is a TT method before validating Horn form
-        is_tt = isinstance(self, TruthTable)
-        
+        # Check if the method is TT or DPLL, which can handle non-Horn clauses
+        allows_non_horn = isinstance(self, (TruthTable, DPLL))
+
         try:
             self.kb = KnowledgeBase(clauses)
             
-            # Only check Horn form requirement for chaining methods
-            if not is_tt and not self.kb.is_horn_form:
-                print(f"Error: Knowledge base contains non-Horn clauses. Found:")
-                for clause in clauses:
-                    if '||' in clause or '<=>' in clause or ('=>' in clause and '~' in clause.split('=>')[0]):
-                        print(f"  - {clause}")
-                print("\nOnly TT (truth table) method can be used with non-Horn clauses.")
-                sys.exit(1)
-                
+            # Only enforce Horn form requirement for chaining methods (FC, BC)
+            if not allows_non_horn and not self.kb.is_horn_form:
+                print(f"Error: Knowledge base contains non-Horn clauses. Only TT (Truth Table) method can be used with non-Horn clauses.")
+                raise ValueError("Only TT and DPLL methods can handle non-Horn clauses.")
+
         except Exception as e:
             print(f"Error initializing knowledge base: {str(e)}")
             sys.exit(1)
+
     
     @abstractmethod
     def solve(self, query: str):
@@ -124,27 +121,18 @@ class InferenceEngine(ABC):
 class TruthTable(InferenceEngine):
     """Truth table checking algorithm implementation with visualization."""
     
-    def _evaluate_clause(self, clause: str, model: Dict[str, bool]): # -> bool
+    def _evaluate_clause(self, clause: str, model: Dict[str, bool]) -> bool:
         """Evaluate a single clause given a model."""
-        # Replace symbols with their boolean values
+        # Replace symbols with their boolean values in the model
         expr = clause
         for symbol, value in model.items():
             expr = re.sub(r'\b' + re.escape(symbol) + r'\b', str(value), expr)
         
         try:
-            # Handle implications
-            while '=>' in expr:
-                parts = expr.split('=>', 1)
-                if len(parts) != 2:
-                    return False
-                
-                left = self._evaluate_boolean_expr(parts[0])
-                right = self._evaluate_boolean_expr(parts[1])
-                result = (not left) or right
-                expr = str(result)
-            
-            return self._evaluate_boolean_expr(expr)
-            
+            # Convert implications manually to avoid eval issues
+            expr = expr.replace('=>', ' <= ').replace('<=>', ' == ')
+            expr = expr.replace('||', ' or ').replace('&', ' and ').replace('~', ' not ')
+            return eval(expr)
         except Exception as e:
             print(f"Error evaluating clause '{clause}': {str(e)}")
             return False
