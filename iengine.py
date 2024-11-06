@@ -1,5 +1,5 @@
 import sys
-from sequence import TruthTable, ForwardChaining, BackwardChaining
+from sequence import TruthTable, ForwardChaining, BackwardChaining, DPLL
 
 # def parse_input_file(filename):
 #     """Parse the input file to extract KB and query."""
@@ -80,7 +80,8 @@ def get_solver(method, kb_clauses):
     solvers = {
         'TT': TruthTable,
         'FC': ForwardChaining,
-        'BC': BackwardChaining
+        'BC': BackwardChaining,
+        'DPLL': DPLL
     }
     
     solver_class = solvers.get(method)
