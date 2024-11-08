@@ -117,7 +117,6 @@ class InferenceEngine(ABC):
 
 
 
-
 class TruthTable(InferenceEngine):
     """Truth table checking algorithm implementation with visualization."""
     
@@ -219,170 +218,127 @@ class TruthTable(InferenceEngine):
         return (truth_table['summary']['is_entailed'], 
                 truth_table['summary']['proving_models'])
 
-    
-class ChainingSolver(InferenceEngine):
-    """Base class for chaining algorithms with common functionality."""
-    
-    def __init__(self, clauses: List[str]):
-        super().__init__(clauses)
-        self.entailed = []
-        self.steps = [] # Track reasoning steps
-        
-    def _get_facts(self): # -> Set[str]
-        """Get initial facts from the knowledge base."""
-        return {conclusion for premises, conclusion in self.kb.horn_clauses if not premises}
-    
-    def _add_step(self, fact: str, reasoning: str, known_facts: List[str] = None):
-        """Add a reasoning step with explanation."""
-        step = {
-            'fact': fact,
-            'reasoning': reasoning,
-            'known_facts': known_facts or []
-        }
-        self.steps.append(step)
-
-class ForwardChaining(ChainingSolver):
-    """Forward chaining algorithm implementation."""
-    
-    def _find_next_conclusion(self, rules, known_facts):
-        """
-        Find the next conclusion that can be derived, prioritizing simpler rules.
-        """
-        candidate_rules = []
-        
-        # First, gather all rules whose premises are satisfied
-        for premises, conclusion in rules:
-            if conclusion not in known_facts and all(p in known_facts for p in premises):
-                # Calculate rule complexity (number of premises)
-                complexity = len(premises)
-                candidate_rules.append((complexity, premises, conclusion))
-        
-        if not candidate_rules:
-            return None, None
-            
-        # Sort by complexity (fewer premises first)
-        candidate_rules.sort(key=lambda x: x[0])
-        _, premises, conclusion = candidate_rules[0]
-        return premises, conclusion
-    
-    def solve(self, query: str):
-        """
-        Implement the forward chaining algorithm to determine if a query can be proven.
-        
-        Args:
-            query: The query to prove
-            
-        Returns:
-            Tuple of (whether query was proven, list of facts derived in order)
-        """
-        # Initialize with facts
-        self.entailed = []
-        self.steps = []
-        
-        # Initialize with facts
-        facts = self._get_facts()
-        for fact in sorted(facts):
-            self.entailed.append(fact)
-            self._add_step(
-                fact=fact,
-                reasoning="Initial fact from knowledge base",
-                known_facts=self.entailed[:-1]
-            )
-            
-        # Get rules (excluding pure facts)
-        rules = [(premises, conclusion) 
-                for premises, conclusion in self.kb.horn_clauses 
-                if premises]
-        
-        while True:
-            # Find next applicable rule based on current knowledge
-            premises, conclusion = self._find_next_conclusion(rules, self.entailed)
-            
-            if conclusion is None:  # No more rules can be applied
-                break
-                
-            # Apply the rule
-            if conclusion not in self.entailed:
-                self.entailed.append(conclusion)
-                self._add_step(
-                    fact=conclusion,
-                    reasoning=f"Derived using: {' AND '.join(premises)}",
-                    known_facts=self.entailed[:-1]
-                )
-            
-            # Remove the used rule to prevent cyclic inference
-            rules.remove((premises, conclusion))
-                
-        return query in self.entailed, self.entailed
 
 
-class BackwardChaining(ChainingSolver):
-    """Backward chaining algorithm implementation."""
-    
-    def _can_prove(self, query: str, visited: Set[str]): # -> bool
-        """Try to prove a query using backward chaining."""
-        if query in visited:
-            return False
-       
-        visited.add(query)
+
+
+
+
+
+
+
+# class DPLL(InferenceEngine):
+#     """DPLL Algorithm class for propositional logic inference."""
+
+#     def __init__(self, clauses: List[str]):
+#         """Initialize the DPLL inference engine with a knowledge base."""
+#         super().__init__(clauses)
+#         self.steps = []
+
+#     def solve(self, query: str) -> Tuple[bool, List[str]]:
+#         """Solve the inference problem using the DPLL algorithm."""
+#         self.steps.clear()
+#         symbols = list(self.kb.symbols)
+#         clauses = self._convert_clauses_to_cnf()
+
+#         # Start by setting known facts in the initial model (e.g., `p = True`)
+#         initial_model = {}
+#         for clause in clauses:
+#             for literal in clause:
+#                 symbol, is_positive = literal
+#                 if is_positive and symbol not in initial_model:
+#                     initial_model[symbol] = True
+
+#         # Perform DPLL with the initial model that includes known facts
+#         result = self._dpll(clauses, symbols, initial_model)
+#         return result, self.steps
+
+#     def _convert_clauses_to_cnf(self) -> List[List[Union[str, Tuple[str, bool]]]]:
+#         """Convert KB clauses to CNF format for DPLL."""
+#         cnf_clauses = []
+#         for clause in self.kb.clauses:
+#             if '=>' in clause:
+#                 antecedent, consequent = clause.split('=>')
+#                 antecedent = antecedent.strip()
+#                 consequent = consequent.strip()
+#                 disjunctions = [f"~{antecedent}", consequent]
+#             else:
+#                 disjunctions = [part.strip() for part in re.split(r'\|\|', clause)]
+            
+#             clause_literals = []
+#             for part in disjunctions:
+#                 if part.startswith('~'):
+#                     clause_literals.append((part[1:], False))  # Negative literal
+#                 else:
+#                     clause_literals.append((part, True))  # Positive literal
+#             cnf_clauses.append(clause_literals)
+#         return cnf_clauses
+
+#     def _dpll(self, clauses: List[List[Union[str, Tuple[str, bool]]]], symbols: List[str], model: Dict[str, bool]) -> bool:
+#         """Recursive DPLL procedure with implications propagation."""
+#         self.steps.append(f"Current model: {model}")
         
-        # Check if query is a fact
-        if query in self._get_facts():
-            self._add_step(
-                fact=query,
-                reasoning="Known fact from knowledge base",
-                known_facts=self.entailed
-            )
-            if query not in self.entailed:
-                self.entailed.append(query)
-            return True
+#         # Check if all clauses are satisfied
+#         if all(self._evaluate_clause(clause, model) for clause in clauses):
+#             self.steps.append("All clauses satisfied.")
+#             return True
+
+#         # Check if any clause is unsatisfiable
+#         if any(self._evaluate_clause(clause, model) is False for clause in clauses):
+#             self.steps.append("Found an unsatisfiable clause.")
+#             return False
+
+#         # Propagate implications based on current model
+#         self._propagate_implications(clauses, model)
+
+#         # Choose an unassigned symbol
+#         unassigned_symbols = [s for s in symbols if s not in model]
+#         if not unassigned_symbols:
+#             return False
+
+#         chosen_symbol = unassigned_symbols[0]
+#         self.steps.append(f"Trying {chosen_symbol} as True.")
         
-        
-        # Try to prove through implications
-        for premises, conclusion in self.kb.horn_clauses:
-            if conclusion == query:
-                all_premises_proven = True
-                required_premises = []
-                
-                for premise in premises:
-                    if not self._can_prove(premise, visited.copy()):
-                        all_premises_proven = False
-                        break
-                    required_premises.append(premise)
-                
-                if all_premises_proven:
-                    self._add_step(
-                        fact=query,
-                        reasoning=f"Proved using: {' AND '.join(required_premises)}",
-                        known_facts=self.entailed
-                    )
-                    if query not in self.entailed:
-                        self.entailed.append(query)
-                    return True
-        
-        # # Try to prove through implications
-        # for premises, conclusion in self.kb.horn_clauses:
-        #     if conclusion == query:
-        #         if all(self._can_prove(premise, visited.copy()) for premise in premises):
-        #             if query not in self.entailed:
-        #                 self.entailed.append(query)
-        #             return True
-        return False
-        
-        
-    def solve(self, query: str): # -> Tuple[bool, List[str]]
-        # self.entailed = set()
-        self.entailed = []
-        self.steps = []
-        # Add initial goal step
-        self._add_step(
-            fact=query,
-            reasoning="Initial goal to prove",
-            known_facts=[]
-        )
-        result = self._can_prove(query, set())
-        
-        return result, self.entailed
+#         # Try assigning True
+#         model[chosen_symbol] = True
+#         if self._dpll(clauses, symbols, model):
+#             return True
+
+#         # Try assigning False
+#         self.steps.append(f"Trying {chosen_symbol} as False.")
+#         model[chosen_symbol] = False
+#         if self._dpll(clauses, symbols, model):
+#             return True
+
+#         # Undo assignment for backtracking
+#         del model[chosen_symbol]
+#         return False
+
+#     def _propagate_implications(self, clauses, model):
+#         """Propagate implications based on current model state."""
+#         for clause in clauses:
+#             if len(clause) == 2:
+#                 antecedent, consequent = clause
+#                 ant_symbol, ant_positive = antecedent
+#                 con_symbol, con_positive = consequent
+
+#                 # If antecedent is true, enforce the consequent
+#                 if ant_symbol in model and model[ant_symbol] == ant_positive:
+#                     model[con_symbol] = con_positive
+
+#     def _evaluate_clause(self, clause: List[Union[str, Tuple[str, bool]]], model: Dict[str, bool]) -> Optional[bool]:
+#         """Evaluate if a clause is satisfied, unsatisfied, or unknown."""
+#         result = False
+#         for symbol, is_positive in clause:
+#             if symbol in model:
+#                 value = model[symbol]
+#                 if (value and is_positive) or (not value and not is_positive):
+#                     return True  # Clause satisfied
+#             else:
+#                 result = None  # Clause unknown if symbol is unassigned
+#         return result
+
+
 
 
 class DPLL(InferenceEngine):
@@ -393,13 +349,13 @@ class DPLL(InferenceEngine):
         super().__init__(clauses)
         self.steps = []
 
-    def solve(self, query: str): #  -> Tuple[bool, List[str]]
+    def solve(self, query: str) -> Tuple[bool, List[str]]:
         """Solve the inference problem using the DPLL algorithm."""
         self.steps.clear()
         symbols = list(self.kb.symbols)
         clauses = self._convert_clauses_to_cnf()
 
-        # Start by setting known facts in the initial model
+        # Start by setting known facts in the initial model (e.g., `p = True`)
         initial_model = {}
         for clause in clauses:
             for literal in clause:
@@ -412,15 +368,15 @@ class DPLL(InferenceEngine):
         result = self._dpll(clauses, symbols, initial_model)
         return result, self.steps
 
-    def _convert_clauses_to_cnf(self): #  -> List[List[Union[str, Tuple[str, bool]]]]
+    def _convert_clauses_to_cnf(self) -> List[List[Union[str, Tuple[str, bool]]]]:
         """Convert KB clauses to CNF format for DPLL, including handling of <=>, =>, and ||."""
         cnf_clauses = []
         for clause in self.kb.clauses:
-            # print(f"Converting clause: {clause}")  # Debug print to inspect the clause
+            print(f"Converting clause: {clause}")  # Debug print to inspect the clause
             cnf_clauses.extend(self._convert_to_cnf(clause))
         return cnf_clauses
 
-    def _convert_to_cnf(self, clause: str): # -> List[List[Union[str, Tuple[str, bool]]]]
+    def _convert_to_cnf(self, clause: str) -> List[List[Union[str, Tuple[str, bool]]]]:
         """Convert a single clause to CNF format."""
         clause = clause.replace(' ', '')
         clause = self._eliminate_biconditionals(clause)
@@ -428,14 +384,14 @@ class DPLL(InferenceEngine):
         clause = self._move_negations_inwards(clause)
         return self._distribute_and_over_or(clause)
 
-    def _eliminate_biconditionals(self, clause: str): #  -> str
+    def _eliminate_biconditionals(self, clause: str) -> str:
         """Eliminate biconditionals (<=>) by converting them to implications."""
         while '<=>' in clause:
             left, right = clause.split('<=>', 1)
             clause = f"({left.strip()}=>{right.strip()})&({right.strip()}=>{left.strip()})"
         return clause
 
-    def _eliminate_implications(self, clause: str): # -> str
+    def _eliminate_implications(self, clause: str) -> str:
         """Eliminate implications (=>) by converting them to disjunctions."""
         while '=>' in clause:
             left, right = clause.split('=>', 1)
@@ -443,7 +399,7 @@ class DPLL(InferenceEngine):
         return clause
     
     
-    def _move_negations_inwards(self, clause: str): #  -> str
+    def _move_negations_inwards(self, clause: str) -> str:
         """Move negations inwards using De Morgan's laws."""
         while '~(' in clause:
             start = clause.index('~(')
@@ -460,7 +416,7 @@ class DPLL(InferenceEngine):
             clause = clause[:start] + negated_sub_clause + clause[end:]
         return clause
 
-    def _negate(self, clause: str): #  -> str
+    def _negate(self, clause: str) -> str:
         """Negate a clause using De Morgan's laws."""
         clause = clause.replace('&&', 'TEMP')
         clause = clause.replace('||', '&&')
@@ -469,7 +425,7 @@ class DPLL(InferenceEngine):
         negated_literals = [f"~{literal}" if not literal.startswith('~') else literal[1:] for literal in literals]
         return '||'.join(negated_literals)
 
-    def _distribute_and_over_or(self, clause: str): # -> List[List[Union[str, Tuple[str, bool]]]]
+    def _distribute_and_over_or(self, clause: str) -> List[List[Union[str, Tuple[str, bool]]]]:
         """Distribute AND over OR to convert to CNF."""
         if '&&' in clause:
             and_clauses = clause.split('&&')
@@ -483,14 +439,17 @@ class DPLL(InferenceEngine):
         else:
             return [[self._parse_literal(clause)]]
 
-    def _parse_literal(self, literal: str): #  -> Union[str, Tuple[str, bool]]
+    def _parse_literal(self, literal: str) -> Union[str, Tuple[str, bool]]:
         """Parse a literal into a tuple of (symbol, is_positive)."""
         if literal.startswith('~'):
             return (literal[1:], False)
         else:
             return (literal, True)
 
-    def _dpll(self, clauses: List[List[Union[str, Tuple[str, bool]]]], symbols: List[str], model: Dict[str, bool]): #  -> bool
+
+
+
+    def _dpll(self, clauses: List[List[Union[str, Tuple[str, bool]]]], symbols: List[str], model: Dict[str, bool]) -> bool:
         """Recursive DPLL procedure with implications propagation."""
         self.steps.append(f"Current model: {model}")
         
@@ -525,7 +484,7 @@ class DPLL(InferenceEngine):
         del model[chosen_symbol]
         return False
 
-    def _evaluate_clause(self, clause: List[Union[str, Tuple[str, bool]]], model: Dict[str, bool]): #  -> Optional[bool]
+    def _evaluate_clause(self, clause: List[Union[str, Tuple[str, bool]]], model: Dict[str, bool]) -> Optional[bool]:
         """Evaluate a clause under the given model."""
         result = False
         for literal in clause:
@@ -552,3 +511,4 @@ class DPLL(InferenceEngine):
         """Propagate implications based on the current model."""
         # This function can be implemented to handle unit propagation and pure literal elimination
         pass
+

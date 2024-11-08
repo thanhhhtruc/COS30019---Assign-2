@@ -54,26 +54,26 @@ const DPLLVisualization = ({ dpllSteps }) => {
       title: "Initial State",
       description: "Starting the DPLL algorithm with the initial set of clauses."
     };
-    
+  
     const explanations = {
       'unit_propagation': {
-        title: "Unit Propagation Rule",
-        description: "When a clause contains only one unassigned literal, that literal must be true to satisfy the clause. This is a forced assignment that simplifies our formula."
+        title: "Unit Propagation",
+        description: "A clause with only one unassigned literal forces that literal to be true to satisfy the clause. This simplifies the formula."
       },
       'pure_literal': {
         title: "Pure Literal Elimination",
-        description: "A literal is pure if it appears with only one polarity in all remaining clauses. Since making it true can only help satisfy clauses, we can safely assign it true."
+        description: "A literal that appears with only one polarity in all remaining clauses can be safely assigned true, as it can only help satisfy clauses."
       },
       'split': {
         title: "Decision (Split)",
-        description: "No more deterministic rules apply. We must choose an unassigned variable and try both true and false values, creating two branches in our search."
+        description: "No deterministic rules apply. An unassigned variable is chosen, and both true and false values are tried, creating two branches in the search."
       },
       'backtrack': {
         title: "Backtracking",
-        description: "Current assignment led to a contradiction. We must undo our last free choice and try the opposite value."
+        description: "A contradiction was found with the current assignment. The last free choice is undone, and the opposite value is tried."
       }
     };
-
+  
     return explanations[step.action] || {
       title: `Step: ${step.action}`,
       description: "Processing DPLL algorithm step"
@@ -224,36 +224,6 @@ const DPLLVisualization = ({ dpllSteps }) => {
           {showExplanations ? 'Hide' : 'Show'} Explanations
         </button>
       </div>
-
-
-      <div>
-        <h2>Visualization of DPLL Steps</h2>
-        <ul>
-            {dpllSteps.steps.map((step, index) => {
-            console.log(`Rendering step ${step.id}:`, step);
-            return (
-                <li key={index}>
-                <p><strong>Step {step.id}</strong></p>
-                <p>Assignment: {JSON.stringify(step.assignment)}</p>
-                <p>Result: {step.result}</p>
-                <p>Action: {step.action}</p>
-                {step.children.length > 0 && (
-                    <div>
-                    <p>Children:</p>
-                    <ul>
-                        {step.children.map((child, childIndex) => (
-                        <li key={childIndex}>{JSON.stringify(child)}</li>
-                        ))}
-                    </ul>
-                    </div>
-                )}
-                </li>
-            );
-            })}
-        </ul>
-        </div>
-
-      
 
       {/* Instructions */}
       <CustomAlert variant="purple" icon={Info}>

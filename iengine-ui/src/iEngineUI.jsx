@@ -55,8 +55,7 @@ const iEngineUI = () => {
       }
   
       const data = await response.json();
-      console.log("Received data:", data); // Log to check structure
-  
+      
       setResult(data.result);
   
       if (selectedMethod === 'DPLL') {
@@ -73,11 +72,6 @@ const iEngineUI = () => {
             satisfiable: data.satisfiable
           };
           setDpllSteps(dpllData);
-
-          dpllSteps.steps.forEach((step, index) => {
-            console.log(`Step ${index + 1} details:`, step);
-          });
-          
         } else {
           console.error("DPLL steps data is missing or not in the expected format.");
           setError("DPLL steps data is missing or not in the expected format.");
@@ -375,7 +369,6 @@ const iEngineUI = () => {
             {/* {method === 'DPLL' && renderDPLLTree()} */}
 
             {/* DPLL Visualization */}
-            {console.log('Current state of dpllSteps:', dpllSteps)}
             {method === 'DPLL' && <DPLLVisualization dpllSteps={dpllSteps} />}
 
             {/* Truth Table Section */}

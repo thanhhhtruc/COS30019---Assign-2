@@ -38,11 +38,36 @@ async def process_file(file: UploadFile, method: str = Form(...)):
             # response_data["dpllSteps"] = result_data.get("dpllSteps", [])
             # response_data["satisfiable"] = result_data.get("satisfiable")
             
-            satisfiable, assignment_steps = solver.solve(query)
-            response_data["result"] = "YES" if satisfiable else "NO"
-            response_data["dpllSteps"] = assignment_steps
-            response_data["satisfiable"] = satisfiable
-            logging.info(f"Response data for DPLL: {response_data}")
+            # satisfiable, assignment_steps = solver.solve(query)
+            # response_data["result"] = "YES" if satisfiable else "NO"
+            # response_data["dpllSteps"] = assignment_steps
+            # response_data["satisfiable"] = satisfiable
+            # logging.info(f"Response data for DPLL: {response_data}")
+            
+            # Get the result from DPLL solver
+            satisfiable, steps = solver.solve(query)
+            
+            # Process the steps into the expected format
+            formatted_steps = []
+            for i, step in enumerate(steps):
+                # Your solver returns steps as strings, so we need to parse them
+                step_info = {
+                    "stepNumber": i + 1,
+                    "assignment": step,  # The full step string
+                    "result": "Success" if "trying" not in step.lower() else "Trying",
+                    "action": "Unit Propagation" if "unit propagation" in step.lower() else
+                             "Pure Symbol" if "pure symbol" in step.lower() else
+                             "Split" if "splitting" in step.lower() else "Assignment"
+                }
+                formatted_steps.append(step_info)
+
+            response_data = {
+                "result": "YES" if satisfiable else "NO",
+                "satisfiable": satisfiable,
+                "dpllSteps": formatted_steps
+            }
+            logging.info(f"DPLL Steps generated: {len(response_data['dpllSteps'])} steps")
+        
         
         else:
             # Solve the query for other methods, expecting a tuple of (result, additional_info)
