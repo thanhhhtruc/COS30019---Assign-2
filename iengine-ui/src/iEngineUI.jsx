@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Upload, Terminal, AlertCircle, Loader, Table } from 'lucide-react';
 import ChainViz from './ChainViz';
+import DPLLVisualization from './DPLLVisualization';
 
 const iEngineUI = () => {
   const [file, setFile] = useState(null);
@@ -65,13 +66,18 @@ const iEngineUI = () => {
             steps: data.dpllSteps.map((step, index) => ({
               id: index + 1,
               assignment: step.assignment || {},
-              result: step.result,
+              result: step.result || null,
               action: step.action || '',
               children: step.children || []
             })),
             satisfiable: data.satisfiable
           };
           setDpllSteps(dpllData);
+
+          dpllSteps.steps.forEach((step, index) => {
+            console.log(`Step ${index + 1} details:`, step);
+          });
+          
         } else {
           console.error("DPLL steps data is missing or not in the expected format.");
           setError("DPLL steps data is missing or not in the expected format.");
@@ -366,7 +372,11 @@ const iEngineUI = () => {
               />
             )}
 
-            {method === 'DPLL' && renderDPLLTree()}
+            {/* {method === 'DPLL' && renderDPLLTree()} */}
+
+            {/* DPLL Visualization */}
+            {console.log('Current state of dpllSteps:', dpllSteps)}
+            {method === 'DPLL' && <DPLLVisualization dpllSteps={dpllSteps} />}
 
             {/* Truth Table Section */}
             {renderTruthTable()}

@@ -1,6 +1,6 @@
 from typing import List, Set, Dict, Tuple, Union, Optional
 from enum import Enum
-import re, sys
+import re, sys, logging
 from abc import ABC, abstractmethod
 
 class LogicalConnective(Enum):
@@ -384,100 +384,452 @@ class BackwardChaining(ChainingSolver):
         
         return result, self.entailed
 
+# class DPLL(InferenceEngine):
+#     """DPLL algorithm implementation with step tracking."""
+
+#     def __init__(self, clauses: List[str]):
+#         # Initialize without Horn form check
+#         self.kb = KnowledgeBase(clauses)
+#         self.steps = []  # Track steps for visualization
+
+#     def solve(self, query: str) -> Dict[str, Union[bool, List[dict]]]:
+#         """Solve a propositional logic query using the DPLL method."""
+#         # Convert KB clauses to a list of clause sets
+#         clauses = [self._parse_clause(clause) for clause in self.kb.clauses]
+#         symbols = list(self.kb.symbols)
+#         model = {}
+
+#         # Perform DPLL and capture steps
+#         result = self._dpll(clauses, symbols, model, self.steps)
+#         return {"satisfiable": result, "dpllSteps": self.steps}
+
+#     def _dpll(self, clauses, symbols, model, steps) -> bool:
+#         """Recursive DPLL procedure with step tracking."""
+#         step = {
+#             'assignment': model.copy(),
+#             'result': None,
+#             'children': []
+#         }
+#         steps.append(step)  # Add current step
+
+#         # Base cases
+#         if self._all_clauses_true(clauses, model):
+#             step['result'] = True
+#             return True
+#         if self._any_clause_false(clauses, model):
+#             step['result'] = False
+#             return False
+
+#         # Choose the next symbol and copy symbols to prevent modifications
+#         symbols_copy = symbols.copy()
+#         symbol = symbols_copy.pop() if symbols_copy else None
+
+#         # If no symbol is left to assign, return False (shouldn't generally reach here)
+#         if not symbol:
+#             step['result'] = False
+#             return False
+
+#         # Try assigning True and False with recursive tracking
+#         model_true = model.copy()
+#         model_true[symbol] = True
+#         step_true = {'assignment': model_true, 'result': None, 'children': []}
+#         step['children'].append(step_true)
+
+#         if self._dpll(clauses, symbols_copy, model_true, step_true['children']):
+#             step['result'] = True
+#             return True
+
+#         model_false = model.copy()
+#         model_false[symbol] = False
+#         step_false = {'assignment': model_false, 'result': None, 'children': []}
+#         step['children'].append(step_false)
+
+#         result = self._dpll(clauses, symbols_copy, model_false, step_false['children'])
+#         step['result'] = result
+#         return result
+
+#     def _all_clauses_true(self, clauses, model) -> bool:
+#         """Check if all clauses are true under the model."""
+#         return all(self._is_clause_true(clause, model) for clause in clauses)
+
+#     def _any_clause_false(self, clauses, model) -> bool:
+#         """Check if any clause is false under the model."""
+#         return any(self._is_clause_false(clause, model) for clause in clauses)
+
+#     def _is_clause_true(self, clause, model) -> bool:
+#         """Check if a clause is true under the model."""
+#         for literal in clause:
+#             if literal in model and model[literal] is True:
+#                 return True
+#             if '~' + literal in model and model['~' + literal] is False:
+#                 return True
+#         return False
+
+#     def _is_clause_false(self, clause, model) -> bool:
+#         """Check if a clause is false under the model."""
+#         return all(
+#             (literal in model and model[literal] is False) or 
+#             ('~' + literal in model and model['~' + literal] is True) 
+#             for literal in clause
+#         )
+
+#     def _parse_clause(self, clause: str) -> Set[str]:
+#         """Parse a clause into literals."""
+#         return set(clause.replace('(', '').replace(')', '').split('||'))
+
+#     def get_steps(self):
+#         """Retrieve the steps for visualization."""
+#         return self.steps
+
+
+
+# class DPLL(InferenceEngine):
+#     """DPLL algorithm implementation with step tracking and improved clause handling."""
+    
+#     def __init__(self, clauses: List[str]):
+#         super().__init__(clauses)
+#         self.steps = []  # Track steps for visualization
+        
+#     def solve(self, query: str) -> Dict[str, Union[bool, List[dict]]]:
+#         """
+#         Solve a propositional logic query using the DPLL method.
+#         Returns a dictionary containing only satisfiability and steps.
+#         """
+#         clauses = [self._parse_clause(clause) for clause in self.kb.clauses]
+#         symbols = self._extract_symbols(clauses)
+#         model = {}
+        
+#         # Add query clause to check for entailment
+#         query_clause = self._parse_clause(query)
+#         query_symbols = self._extract_symbols([query_clause])
+#         symbols = symbols.union(query_symbols)
+        
+#         # Perform DPLL and capture steps
+#         result = self._dpll(clauses, symbols, model)
+#         return {
+#             "satisfiable": result[0],
+#             "dpllSteps": self.steps
+#         }
+    
+#     def _dpll(self, clauses: List[Set[str]], symbols: Set[str], model: Dict[str, bool]) -> tuple[bool, Optional[Dict[str, bool]]]:
+#         """
+#         Recursive DPLL procedure with improved unit propagation and pure symbol elimination.
+#         Returns (satisfiable, model) tuple.
+#         """
+#         # Record current step
+#         step = {
+#             'assignment': model.copy(),
+#             'clauses': [clause.copy() for clause in clauses],
+#             'symbols': symbols.copy(),
+#             'children': []
+#         }
+#         self.steps.append(step)
+        
+#         # Check if all clauses are satisfied
+#         if not clauses:
+#             step['result'] = True
+#             return True, model
+        
+#         # Check if any clause is empty (unsatisfiable)
+#         if any(not clause for clause in clauses):
+#             step['result'] = False
+#             return False, None
+        
+#         # Unit propagation
+#         unit_clause = self._find_unit_clause(clauses)
+#         if unit_clause:
+#             literal = next(iter(unit_clause))
+#             new_model = model.copy()
+#             if literal.startswith('~'):
+#                 new_model[literal[1:]] = False
+#             else:
+#                 new_model[literal] = True
+            
+#             new_clauses = self._simplify_clauses(clauses, literal)
+#             new_symbols = symbols - {literal.lstrip('~')}
+            
+#             child_step = {'type': 'unit_propagation', 'literal': literal}
+#             step['children'].append(child_step)
+            
+#             return self._dpll(new_clauses, new_symbols, new_model)
+        
+#         # Pure symbol elimination
+#         pure_symbol = self._find_pure_symbol(clauses, symbols)
+#         if pure_symbol:
+#             new_model = model.copy()
+#             if pure_symbol.startswith('~'):
+#                 new_model[pure_symbol[1:]] = False
+#             else:
+#                 new_model[pure_symbol] = True
+            
+#             new_clauses = self._simplify_clauses(clauses, pure_symbol)
+#             new_symbols = symbols - {pure_symbol.lstrip('~')}
+            
+#             child_step = {'type': 'pure_symbol', 'symbol': pure_symbol}
+#             step['children'].append(child_step)
+            
+#             return self._dpll(new_clauses, new_symbols, new_model)
+        
+#         # Choose a symbol for splitting
+#         symbol = self._choose_symbol(symbols, clauses)
+#         if not symbol:
+#             step['result'] = False
+#             return False, None
+        
+#         # Try with symbol = True
+#         new_model = model.copy()
+#         new_model[symbol] = True
+#         new_clauses = self._simplify_clauses(clauses, symbol)
+#         new_symbols = symbols - {symbol}
+        
+#         child_step_true = {
+#             'type': 'split',
+#             'symbol': symbol,
+#             'value': True
+#         }
+#         step['children'].append(child_step_true)
+        
+#         result = self._dpll(new_clauses, new_symbols, new_model)
+#         if result[0]:
+#             step['result'] = True
+#             return True, result[1]
+        
+#         # Try with symbol = False
+#         new_model = model.copy()
+#         new_model[symbol] = False
+#         new_clauses = self._simplify_clauses(clauses, f"~{symbol}")
+        
+#         child_step_false = {
+#             'type': 'split',
+#             'symbol': symbol,
+#             'value': False
+#         }
+#         step['children'].append(child_step_false)
+        
+#         result = self._dpll(new_clauses, new_symbols, new_model)
+#         step['result'] = result[0]
+#         return result
+    
+#     def _parse_clause(self, clause: str) -> Set[str]:
+#         """Parse a clause string into a set of literals."""
+#         # Remove parentheses and split by OR operator
+#         literals = clause.replace('(', '').replace(')', '').split('||')
+#         # Clean up each literal and handle negations
+#         return {lit.strip() for lit in literals}
+    
+#     def _extract_symbols(self, clauses: List[Set[str]]) -> Set[str]:
+#         """Extract all symbols from clauses, removing negation signs."""
+#         symbols = set()
+#         for clause in clauses:
+#             for literal in clause:
+#                 symbols.add(literal.lstrip('~'))
+#         return symbols
+    
+#     def _find_unit_clause(self, clauses: List[Set[str]]) -> Optional[Set[str]]:
+#         """Find a unit clause (clause with single literal)."""
+#         for clause in clauses:
+#             if len(clause) == 1:
+#                 return clause
+#         return None
+    
+#     def _find_pure_symbol(self, clauses: List[Set[str]], symbols: Set[str]) -> Optional[str]:
+#         """Find a pure symbol (appears with same polarity in all clauses)."""
+#         for symbol in symbols:
+#             pos_count = sum(1 for clause in clauses if symbol in clause)
+#             neg_count = sum(1 for clause in clauses if f"~{symbol}" in clause)
+#             if pos_count > 0 and neg_count == 0:
+#                 return symbol
+#             if neg_count > 0 and pos_count == 0:
+#                 return f"~{symbol}"
+#         return None
+    
+#     def _choose_symbol(self, symbols: Set[str], clauses: List[Set[str]]) -> Optional[str]:
+#         """Choose next symbol for splitting using a simple heuristic."""
+#         if not symbols:
+#             return None
+#         # Choose symbol that appears most frequently
+#         symbol_counts = {}
+#         for symbol in symbols:
+#             count = sum(1 for clause in clauses for literal in clause 
+#                        if literal == symbol or literal == f"~{symbol}")
+#             symbol_counts[symbol] = count
+#         return max(symbol_counts.items(), key=lambda x: x[1])[0]
+    
+#     def _simplify_clauses(self, clauses: List[Set[str]], literal: str) -> List[Set[str]]:
+#         """
+#         Simplify clauses based on the assigned literal.
+#         Remove clauses containing the literal and remove complement from other clauses.
+#         """
+#         complement = f"~{literal}" if not literal.startswith('~') else literal[1:]
+#         result = []
+        
+#         for clause in clauses:
+#             if literal in clause:
+#                 continue  # Clause is satisfied
+#             new_clause = clause - {complement}  # Remove complement
+#             if new_clause:  # Only add non-empty clauses
+#                 result.append(new_clause)
+        
+#         return result
+
+#     def get_steps(self) -> List[dict]:
+#         """Return the solution steps for visualization."""
+#         return self.steps
+
+
+
+
+# Correct DPLL
+
 class DPLL(InferenceEngine):
     """DPLL algorithm implementation with step tracking."""
-
+    
     def __init__(self, clauses: List[str]):
-        # Initialize without Horn form check
-        self.kb = KnowledgeBase(clauses)
+        super().__init__(clauses)
         self.steps = []  # Track steps for visualization
-
-    def solve(self, query: str) -> Dict[str, Union[bool, List[dict]]]:
-        """Solve a propositional logic query using the DPLL method."""
-        # Convert KB clauses to a list of clause sets
+        self.model = {}  # Track the final model
+        
+    def solve(self, query: str): #  -> Tuple[bool, List[str]]
+        """
+        Solve a propositional logic query using the DPLL method.
+        Returns (satisfiable, assignment_steps) where assignment_steps shows how variables were assigned.
+        """
         clauses = [self._parse_clause(clause) for clause in self.kb.clauses]
-        symbols = list(self.kb.symbols)
-        model = {}
-
-        # Perform DPLL and capture steps
-        result = self._dpll(clauses, symbols, model, self.steps)
-        return {"satisfiable": result, "dpllSteps": self.steps}
-
-    def _dpll(self, clauses, symbols, model, steps) -> bool:
-        """Recursive DPLL procedure with step tracking."""
-        step = {
-            'assignment': model.copy(),
-            'result': None,
-            'children': []
-        }
-        steps.append(step)  # Add current step
-
-        # Base cases
-        if self._all_clauses_true(clauses, model):
-            step['result'] = True
-            return True
-        if self._any_clause_false(clauses, model):
-            step['result'] = False
-            return False
-
-        # Choose the next symbol and copy symbols to prevent modifications
-        symbols_copy = symbols.copy()
-        symbol = symbols_copy.pop() if symbols_copy else None
-
-        # If no symbol is left to assign, return False (shouldn't generally reach here)
+        symbols = self._extract_symbols(clauses)
+        self.model = {}
+        self.steps = []  # Reset steps for new solving attempt
+        
+        # Add query clause to check for entailment
+        query_clause = self._parse_clause(query)
+        query_symbols = self._extract_symbols([query_clause])
+        symbols = symbols.union(query_symbols)
+        
+        # Perform DPLL
+        result = self._dpll(clauses, symbols, self.model)
+        logging.info(f"DPLL result: {result[0]}; Steps recorded: {self.steps}")
+        return result[0], self.steps
+    
+    def _dpll(self, clauses: List[Set[str]], symbols: Set[str], model: Dict[str, bool]): #  -> tuple[bool, Optional[Dict[str, bool]]]
+        """
+        Recursive DPLL procedure with unit propagation and pure symbol elimination.
+        """
+        # Check if all clauses are satisfied
+        if not clauses:
+            self.model.update(model)
+            return True, model
+        
+        # Check if any clause is empty (unsatisfiable)
+        if any(not clause for clause in clauses):
+            return False, None
+        
+        # Unit propagation
+        unit_clause = self._find_unit_clause(clauses)
+        if unit_clause:
+            literal = next(iter(unit_clause))
+            new_model = model.copy()
+            is_positive = not literal.startswith('~')
+            symbol = literal[1:] if not is_positive else literal
+            new_model[symbol] = is_positive
+            
+            # Record unit propagation step
+            self.steps.append(f"\n\tUnit propagation: {symbol}={'T' if is_positive else 'F'}")
+            
+            new_clauses = self._simplify_clauses(clauses, literal)
+            new_symbols = symbols - {symbol}
+            
+            return self._dpll(new_clauses, new_symbols, new_model)
+        
+        # Pure symbol elimination
+        pure_symbol = self._find_pure_symbol(clauses, symbols)
+        if pure_symbol:
+            new_model = model.copy()
+            is_positive = not pure_symbol.startswith('~')
+            symbol = pure_symbol[1:] if not is_positive else pure_symbol
+            new_model[symbol] = is_positive
+            
+            # Record pure symbol elimination step
+            self.steps.append(f"\n\tPure symbol elimination: {symbol}={'T' if is_positive else 'F'}")
+            
+            new_clauses = self._simplify_clauses(clauses, pure_symbol)
+            new_symbols = symbols - {symbol}
+            
+            return self._dpll(new_clauses, new_symbols, new_model)
+        
+        # Choose a symbol for splitting
+        symbol = self._choose_symbol(symbols, clauses)
         if not symbol:
-            step['result'] = False
-            return False
+            return False, None
+        
+        # Try with symbol = True
+        new_model = model.copy()
+        new_model[symbol] = True
+        self.steps.append(f"Splitting: trying {symbol}=T")
+        new_clauses = self._simplify_clauses(clauses, symbol)
+        new_symbols = symbols - {symbol}
+        
+        result = self._dpll(new_clauses, new_symbols, new_model)
+        if result[0]:
+            return True, result[1]
+        
+        # Try with symbol = False
+        new_model = model.copy()
+        new_model[symbol] = False
+        self.steps.append(f"Splitting: trying {symbol}=F")
+        new_clauses = self._simplify_clauses(clauses, f"~{symbol}")
+        
+        return self._dpll(new_clauses, new_symbols, new_model)
 
-        # Try assigning True and False with recursive tracking
-        model_true = model.copy()
-        model_true[symbol] = True
-        step_true = {'assignment': model_true, 'result': None, 'children': []}
-        step['children'].append(step_true)
-
-        if self._dpll(clauses, symbols_copy, model_true, step_true['children']):
-            step['result'] = True
-            return True
-
-        model_false = model.copy()
-        model_false[symbol] = False
-        step_false = {'assignment': model_false, 'result': None, 'children': []}
-        step['children'].append(step_false)
-
-        result = self._dpll(clauses, symbols_copy, model_false, step_false['children'])
-        step['result'] = result
+    def _parse_clause(self, clause: str): #  -> Set[str]
+        """Parse a clause string into a set of literals."""
+        literals = clause.replace('(', '').replace(')', '').split('||')
+        return {lit.strip() for lit in literals}
+    
+    def _extract_symbols(self, clauses: List[Set[str]]): #  -> Set[str]
+        """Extract all symbols from clauses, removing negation signs."""
+        symbols = set()
+        for clause in clauses:
+            for literal in clause:
+                symbols.add(literal.lstrip('~'))
+        return symbols
+    
+    def _find_unit_clause(self, clauses: List[Set[str]]): #  -> Optional[Set[str]]
+        """Find a unit clause (clause with single literal)."""
+        for clause in clauses:
+            if len(clause) == 1:
+                return clause
+        return None
+    
+    def _find_pure_symbol(self, clauses: List[Set[str]], symbols: Set[str]): #  -> Optional[str]
+        """Find a pure symbol (appears with same polarity in all clauses)."""
+        for symbol in symbols:
+            pos_count = sum(1 for clause in clauses if symbol in clause)
+            neg_count = sum(1 for clause in clauses if f"~{symbol}" in clause)
+            if pos_count > 0 and neg_count == 0:
+                return symbol
+            if neg_count > 0 and pos_count == 0:
+                return f"~{symbol}"
+        return None
+    
+    def _choose_symbol(self, symbols: Set[str], clauses: List[Set[str]]): # -> Optional[str]
+        """Choose next symbol for splitting using a simple heuristic."""
+        if not symbols:
+            return None
+        return next(iter(symbols))  # Simple selection of first symbol
+    
+    def _simplify_clauses(self, clauses: List[Set[str]], literal: str): #  -> List[Set[str]]
+        """Simplify clauses based on the assigned literal."""
+        complement = f"~{literal}" if not literal.startswith('~') else literal[1:]
+        result = []
+        
+        for clause in clauses:
+            if literal in clause:
+                continue  # Clause is satisfied
+            new_clause = clause - {complement}  # Remove complement
+            if new_clause:  # Only add non-empty clauses
+                result.append(new_clause)
+        
         return result
 
-    def _all_clauses_true(self, clauses, model) -> bool:
-        """Check if all clauses are true under the model."""
-        return all(self._is_clause_true(clause, model) for clause in clauses)
 
-    def _any_clause_false(self, clauses, model) -> bool:
-        """Check if any clause is false under the model."""
-        return any(self._is_clause_false(clause, model) for clause in clauses)
 
-    def _is_clause_true(self, clause, model) -> bool:
-        """Check if a clause is true under the model."""
-        for literal in clause:
-            if literal in model and model[literal] is True:
-                return True
-            if '~' + literal in model and model['~' + literal] is False:
-                return True
-        return False
-
-    def _is_clause_false(self, clause, model) -> bool:
-        """Check if a clause is false under the model."""
-        return all(
-            (literal in model and model[literal] is False) or 
-            ('~' + literal in model and model['~' + literal] is True) 
-            for literal in clause
-        )
-
-    def _parse_clause(self, clause: str) -> Set[str]:
-        """Parse a clause into literals."""
-        return set(clause.replace('(', '').replace(')', '').split('||'))
-
-    def get_steps(self):
-        """Retrieve the steps for visualization."""
-        return self.steps
 

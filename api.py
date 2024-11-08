@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 import tempfile
-import os
+import os, logging
 from iengine import parse_input_file, get_solver
 
 app = FastAPI()
@@ -32,10 +32,17 @@ async def process_file(file: UploadFile, method: str = Form(...)):
 
         if method == "DPLL":
             # Solve the query using DPLL, expecting a dictionary with `satisfiable` and `dpllSteps`
-            result_data = solver.solve(query)  # DPLL should return a dict
-            response_data["result"] = "YES" if result_data.get("satisfiable") else "NO"
-            response_data["dpllSteps"] = result_data.get("dpllSteps", [])
-            response_data["satisfiable"] = result_data.get("satisfiable")
+            
+            # result_data = solver.solve(query)  # DPLL should return a dict
+            # response_data["result"] = "YES" if result_data.get("satisfiable") else "NO"
+            # response_data["dpllSteps"] = result_data.get("dpllSteps", [])
+            # response_data["satisfiable"] = result_data.get("satisfiable")
+            
+            satisfiable, assignment_steps = solver.solve(query)
+            response_data["result"] = "YES" if satisfiable else "NO"
+            response_data["dpllSteps"] = assignment_steps
+            response_data["satisfiable"] = satisfiable
+            logging.info(f"Response data for DPLL: {response_data}")
         
         else:
             # Solve the query for other methods, expecting a tuple of (result, additional_info)

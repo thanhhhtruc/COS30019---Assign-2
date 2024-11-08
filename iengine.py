@@ -105,7 +105,7 @@ def main():
         
         # Solve and format output
         result, additional_info = solver.solve(query)
-        
+
         if result:
             info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
             print(f'YES: {info_str}')
