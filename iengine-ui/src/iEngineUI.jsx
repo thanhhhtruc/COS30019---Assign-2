@@ -297,17 +297,23 @@ const iEngineUI = () => {
             <div className="mb-8">
               <h2 className="text-3xl font-semibold mb-4 text-gray-800">Select Algorithms</h2>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {['TT', 'FC', 'BC', 'DPLL'].map((m) => (
+                {[
+                  { key: 'TT', name: 'Truth Table', description: 'Exhaustive search through all possible models.' },
+                  { key: 'FC', name: 'Forward Chaining', description: 'Inference method using forward chaining.' },
+                  { key: 'BC', name: 'Backward Chaining', description: 'Inference method using backward chaining.' },
+                  { key: 'DPLL', name: 'DPLL', description: 'Davis-Putnam-Logemann-Loveland algorithm for SAT.' }
+                ].map((m) => (
                   <button
-                    key={m}
-                    onClick={() => handleMethodSelect(m)}
+                    key={m.key}
+                    onClick={() => handleMethodSelect(m.key)}
                     className={`p-4 rounded-xl font-medium transition-all transform hover:scale-105 
-                      ${method === m
+                      ${method === m.key
                         ? 'bg-blue-600 text-white shadow-lg'
                         : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                       }`}
                   >
-                    {m}
+                    <div className="text-lg font-bold">{m.name}</div>
+                    <div className="text-sm">{m.description}</div>
                   </button>
                 ))}
               </div>
