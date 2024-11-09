@@ -78,8 +78,13 @@ def main():
         result, additional_info = solver.solve(query)
         
         if result:
-            info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
-            print(f'YES: {info_str}')
+            # info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
+            # print(f'YES: {info_str}')
+            if isinstance(additional_info, list) and all(isinstance(item, dict) for item in additional_info):
+                info_str = ', '.join(str(item) for item in additional_info)
+            else:
+                info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
+                print(f'YES: {info_str}')
         else:
             print("NO")
     except Exception as e:

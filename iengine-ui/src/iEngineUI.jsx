@@ -61,17 +61,19 @@ const iEngineUI = () => {
       if (selectedMethod === 'DPLL') {
         // Ensure dpllSteps is defined and is an array
         if (data.dpllSteps && Array.isArray(data.dpllSteps)) {
-          const dpllData = {
-            steps: data.dpllSteps.map((step, index) => ({
-              id: index + 1,
-              assignment: step.assignment || {},
-              result: step.result || null,
-              action: step.action || '',
-              children: step.children || []
-            })),
-            satisfiable: data.satisfiable
-          };
-          setDpllSteps(dpllData);
+          // const dpllData = {
+          //   steps: data.dpllSteps.map((step, index) => ({
+          //     id: index + 1,
+          //     assignment: step.assignment || {},
+          //     result: step.result || null,
+          //     action: step.action || '',
+          //     children: step.children || []
+          //   })),
+          //   satisfiable: data.satisfiable
+          // };
+          // setDpllSteps(dpllData);
+
+          setDpllSteps(data.dpllSteps); // Pass the raw steps directly
         } else {
           console.error("DPLL steps data is missing or not in the expected format.");
           setError("DPLL steps data is missing or not in the expected format.");
@@ -369,7 +371,7 @@ const iEngineUI = () => {
             {/* {method === 'DPLL' && renderDPLLTree()} */}
 
             {/* DPLL Visualization */}
-            {method === 'DPLL' && <DPLLVisualization dpllSteps={dpllSteps} />}
+            {method === 'DPLL' && dpllSteps && <DPLLVisualization dpllSteps={dpllSteps} />}
 
             {/* Truth Table Section */}
             {renderTruthTable()}

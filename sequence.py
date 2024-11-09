@@ -490,18 +490,52 @@ class DPLL(InferenceEngine):
         else:
             return (literal, True)
 
-    def _dpll(self, clauses: List[List[Union[str, Tuple[str, bool]]]], symbols: List[str], model: Dict[str, bool]): #  -> bool
-        """Recursive DPLL procedure with implications propagation."""
-        self.steps.append(f"Current model: {model}")
+    # def _dpll(self, clauses: List[List[Union[str, Tuple[str, bool]]]], symbols: List[str], model: Dict[str, bool]): #  -> bool
+    #     """Recursive DPLL procedure with implications propagation."""
+    #     self.steps.append(f"Current model: {model}")
         
+    #     # Check if all clauses are satisfied
+    #     if all(self._evaluate_clause(clause, model) for clause in clauses):
+    #         self.steps.append("All clauses satisfied.")
+    #         return True
+
+    #     # Check if any clause is unsatisfiable
+    #     if any(self._evaluate_clause(clause, model) is False for clause in clauses):
+    #         self.steps.append("Found an unsatisfiable clause.")
+    #         return False
+
+    #     # Choose an unassigned symbol
+    #     unassigned_symbols = [s for s in symbols if s not in model]
+    #     if not unassigned_symbols:
+    #         return False
+
+    #     chosen_symbol = unassigned_symbols[0]
+
+    #     # Try assigning True to the chosen symbol
+    #     model[chosen_symbol] = True
+    #     if self._dpll(clauses, symbols, model):
+    #         return True
+
+    #     # If assigning True didn't work, try assigning False
+    #     model[chosen_symbol] = False
+    #     if self._dpll(clauses, symbols, model):
+    #         return True
+
+    #     # If neither True nor False worked, backtrack
+    #     del model[chosen_symbol]
+    #     return False
+    
+    def _dpll(self, clauses, symbols, model):
+        self.steps.append(f"Current model: {model}")
+
         # Check if all clauses are satisfied
         if all(self._evaluate_clause(clause, model) for clause in clauses):
-            self.steps.append("All clauses satisfied.")
+            self.steps.append(f"Result: SAT, Model: {model.copy()}")
             return True
 
         # Check if any clause is unsatisfiable
         if any(self._evaluate_clause(clause, model) is False for clause in clauses):
-            self.steps.append("Found an unsatisfiable clause.")
+            self.steps.append(f"Result: UNSAT, Model: {model.copy()}")
             return False
 
         # Choose an unassigned symbol
@@ -513,16 +547,19 @@ class DPLL(InferenceEngine):
 
         # Try assigning True to the chosen symbol
         model[chosen_symbol] = True
+        self.steps.append(f"Exploring, Model: {model.copy()}")
         if self._dpll(clauses, symbols, model):
             return True
 
         # If assigning True didn't work, try assigning False
         model[chosen_symbol] = False
+        self.steps.append(f"Exploring, Model: {model.copy()}")
         if self._dpll(clauses, symbols, model):
             return True
 
         # If neither True nor False worked, backtrack
         del model[chosen_symbol]
+        self.steps.append(f"Backtrack, Model: {model}")
         return False
 
     def _evaluate_clause(self, clause: List[Union[str, Tuple[str, bool]]], model: Dict[str, bool]): #  -> Optional[bool]
