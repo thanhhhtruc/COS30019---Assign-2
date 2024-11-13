@@ -1,6 +1,253 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Upload, Terminal, AlertCircle, Loader, Table } from 'lucide-react';
 import ChainViz from './ChainViz';
+
+
+// const DPLLViz = ({ result, knowledgeBase }) => {
+//   console.log('DPLLViz props:', { result, knowledgeBase });
+//   const [currentStep, setCurrentStep] = useState(0);
+//   const [isPlaying, setIsPlaying] = useState(false);
+//   const [speed, setSpeed] = useState(1000);
+
+//   const parseDPLLData = (resultString) => {
+//     if (!resultString) return [];
+    
+//     // Split the result string into individual steps
+//     const steps = resultString.split('\n').filter(step => step.trim());
+    
+//     // Format each step
+//     return steps.map((step, index) => ({
+//         step: index + 1,
+//         detail: step.trim()
+//     }));
+//   };
+
+//   const steps = parseDPLLData(result);
+//   console.log('Parsed DPLL steps:', steps);
+
+//   useEffect(() => {
+//     let timer;
+//     if (isPlaying && currentStep < steps.length - 1) {
+//       timer = setTimeout(() => {
+//         setCurrentStep(prev => prev + 1);
+//       }, speed);
+//     } else if (currentStep >= steps.length - 1) {
+//       setIsPlaying(false);
+//     }
+//     return () => clearTimeout(timer);
+//   }, [currentStep, isPlaying, steps.length, speed]);
+
+//   const handlePlayPause = () => setIsPlaying(!isPlaying);
+//   const handleReset = () => {
+//     setCurrentStep(0);
+//     setIsPlaying(false);
+//   };
+//   const handleStepForward = () => {
+//     if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1);
+//   };
+//   const handleStepBack = () => {
+//     if (currentStep > 0) setCurrentStep(currentStep - 1);
+//   };
+
+//   if (!steps.length) return null;
+
+//   return (
+//     <div className="mt-8 bg-white rounded-lg p-6 shadow-lg">
+//       <div className="mb-6">
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-2">DPLL Visualization</h2>
+//         <p className="text-gray-800">Visualizing the DPLL algorithm steps.</p>
+//       </div>
+
+//       {/* Current Step Details */}
+//       <div className="bg-gray-50 rounded-lg p-6 mb-4">
+//         <h3 className="font-semibold text-gray-800 mb-4 text-lg">Step {currentStep + 1} Details</h3>
+//         <p className="text-gray-800">{steps[currentStep].detail}</p>
+//       </div>
+
+//       {/* Controls */}
+//       <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+//         <div className="flex items-center gap-4">
+//           <button onClick={handleStepBack} disabled={currentStep === 0} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-none text-gray-800">Back</button>
+//           <button onClick={handlePlayPause} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">
+//             {isPlaying ? 'Pause' : 'Play'}
+//           </button>
+//           <button onClick={handleStepForward} disabled={currentStep === steps.length - 1} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-none text-gray-800">Forward</button>
+//           <button onClick={handleReset} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">Reset</button>
+//         </div>
+//         <div className="flex items-center gap-2">
+//           <span className="text-sm text-gray-800">Speed:</span>
+//           <input type="range" min="200" max="2000" step="200" value={2000 - speed + 200} onChange={(e) => setSpeed(2000 - Number(e.target.value) + 200)} className="w-32" />
+//         </div>
+//         <div className="text-sm text-gray-800">Step {currentStep + 1} of {steps.length}</div>
+//       </div>
+//     </div>
+//   );
+// };
+
+
+
+
+
+
+const DPLLViz = ({ result, knowledgeBase }) => {
+  console.log('DPLLViz props:', { result, knowledgeBase });
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1000);
+
+  const parseDPLLData = (resultString) => {
+    if (!resultString) return [];
+    
+    // Split the result string into individual steps
+    const steps = resultString.split('\n').filter(step => step.trim());
+    
+    // Format each step
+    return steps.map((step, index) => ({
+        step: index + 1,
+        detail: step.trim()
+    }));
+  };
+
+  const steps = parseDPLLData(result);
+  console.log('Parsed DPLL steps:', steps);
+
+  useEffect(() => {
+    let timer;
+    if (isPlaying && currentStep < steps.length - 1) {
+      timer = setTimeout(() => {
+        setCurrentStep(prev => prev + 1);
+      }, speed);
+    } else if (currentStep >= steps.length - 1) {
+      setIsPlaying(false);
+    }
+    return () => clearTimeout(timer);
+  }, [currentStep, isPlaying, steps.length, speed]);
+
+  const handlePlayPause = () => setIsPlaying(!isPlaying);
+  const handleReset = () => {
+    setCurrentStep(0);
+    setIsPlaying(false);
+  };
+  const handleStepForward = () => {
+    if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1);
+  };
+  const handleStepBack = () => {
+    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  };
+
+  if (!steps.length) return null;
+
+  const renderTreeNodes = (steps) => {
+    const nodeWidth = 140;
+    const nodeHeight = 50;
+    const svgWidth = 1600;
+    const svgHeight = 1200;
+    const rootX = svgWidth / 2;
+    const rootY = nodeHeight * 2;
+    const horizontalSpacing = 200;
+    const verticalSpacing = 100;
+
+    const nodes = steps.map((step, index) => {
+      const x = rootX + (index % 2 === 0 ? -1 : 1) * (Math.floor(index / 2) * horizontalSpacing);
+      const y = rootY + (Math.floor(index / 2) * verticalSpacing);
+      return { step, x, y };
+    });
+
+    return (
+      <svg width={svgWidth} height={svgHeight} className="overflow-visible">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#3B82F6" />
+          </marker>
+        </defs>
+        {nodes.map((node, index) => {
+          if (index > 0) {
+            const parentIndex = Math.floor((index - 1) / 2);
+            const parent = nodes[parentIndex];
+
+            return (
+              <line
+                key={`line-${index}`}
+                x1={parent.x}
+                y1={parent.y + nodeHeight / 2}
+                x2={node.x}
+                y2={node.y - nodeHeight / 2}
+                stroke="#ccc"
+                strokeWidth={2}
+                markerEnd="url(#arrowhead)"
+              />
+            );
+          }
+          return null;
+        })}
+        {nodes.map((node, index) => (
+          <g key={`node-${index}`} className="transition-all duration-500">
+            <rect
+              x={node.x - nodeWidth / 2}
+              y={node.y - nodeHeight / 2}
+              width={nodeWidth}
+              height={nodeHeight}
+              rx={10}
+              ry={10}
+              fill={index === currentStep ? '#3B82F6' : '#E2E8F0'}
+              stroke="#000"
+              strokeWidth={index === currentStep ? 3 : 1}
+              className="transition-all duration-300"
+            />
+            <text x={node.x} y={node.y} textAnchor="middle" className="text-sm font-mono fill-gray-700" dy=".35em">
+              {node.step.detail}
+            </text>
+          </g>
+        ))}
+      </svg>
+    );
+  };
+
+  return (
+    <div className="mt-8 bg-white rounded-lg p-6 shadow-lg">
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-2">DPLL Visualization</h2>
+        <p className="text-gray-800">Visualizing the DPLL algorithm steps.</p>
+      </div>
+
+      {/* Current Step Details */}
+      <div className="bg-gray-50 rounded-lg p-6 mb-4">
+        <h3 className="font-semibold text-gray-800 mb-4 text-lg">Step {currentStep + 1} Details</h3>
+        <p className="text-gray-800">{steps[currentStep].detail}</p>
+      </div>
+
+      {/* Visualization Area */}
+      <div className="relative bg-white rounded-lg mb-6 p-4 overflow-auto" style={{ width: '100%', height: '600px' }}>
+        {renderTreeNodes(steps)}
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+        <div className="flex items-center gap-4">
+          <button onClick={handleStepBack} disabled={currentStep === 0} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-none text-gray-800">Back</button>
+          <button onClick={handlePlayPause} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">
+            {isPlaying ? 'Pause' : 'Play'}
+          </button>
+          <button onClick={handleStepForward} disabled={currentStep === steps.length - 1} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-none text-gray-800">Forward</button>
+          <button onClick={handleReset} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">Reset</button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-800">Speed:</span>
+          <input type="range" min="200" max="2000" step="200" value={2000 - speed + 200} onChange={(e) => setSpeed(2000 - Number(e.target.value) + 200)} className="w-32" />
+        </div>
+        <div className="text-sm text-gray-800">Step {currentStep + 1} of {steps.length}</div>
+      </div>
+    </div>
+  );
+};
+
+
+
+
+
+
+
+
 
 const iEngineUI = () => {
   const [file, setFile] = useState(null);
@@ -11,6 +258,7 @@ const iEngineUI = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [fileContent, setFileContent] = useState('');
+  const [dpllData, setDpllData] = useState(null);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -26,6 +274,7 @@ const iEngineUI = () => {
   };
 
   const handleMethodSelect = async (selectedMethod) => {
+    console.log('Selected method:', selectedMethod);
     setMethod(selectedMethod);
     setError('');
     setTruthTable(null);
@@ -55,7 +304,16 @@ const iEngineUI = () => {
       setResult(data.result);
 
       // Format the chain result for visualization
-      if ((selectedMethod === 'FC' || selectedMethod === 'BC') && data.result.includes('YES:')) {
+      if (selectedMethod === 'DPLL') {
+        console.log('Processing DPLL result'); // Debug log
+        // Ensure we have properly formatted DPLL data
+        const dpllSteps = data.steps || [];
+        setDpllData(dpllSteps);
+        setChainResult(dpllSteps.join('\n'));
+        console.log("Rendering DPLLViz with result:", dpllSteps);
+  
+        console.log('DPLL Steps:', dpllSteps); // Debug log
+      }else if ((selectedMethod === 'FC' || selectedMethod === 'BC') && data.result.includes('YES:')) {
         const facts = data.result.split('YES:')[1].trim();
         setChainResult(`YES:\n${facts}`);  // Format for ChainViz
       } else {
@@ -71,73 +329,6 @@ const iEngineUI = () => {
       setIsLoading(false);
     }
   };
-
-
-
-  // const renderTruthTable = () => {
-  //   if (!truthTable) return null;
-
-  //   return (
-  //     <div className="mt-8">
-  //       <div className="flex items-center gap-2 mb-4">
-  //         <Table className="w-6 h-6 text-gray-700" />
-  //         <h2 className="text-2xl font-semibold text-gray-800">Truth Table</h2>
-  //       </div>
-  //       <div className="relative overflow-x-auto rounded-lg">
-  //         <div className="max-h-96 overflow-y-auto rounded-lg">
-  //           <table className="w-full border-collapse rounded-lg">
-  //             <thead className="bg-blue-900 text-white sticky top-0 z-10 rounded-t-lg">
-  //               <tr>
-  //                 <th className="p-4 border-b border-blue-700 whitespace-nowrap">Model ID</th>
-  //                 {/* Model columns */}
-  //                 {truthTable.symbols.map(symbol => (
-  //                   <th key={symbol} className="p-4 border-b border-blue-700 whitespace-nowrap">{symbol}</th>
-  //                 ))}
-  //                 {/* KB clause columns */}
-  //                 {truthTable.clauses.map((clause, i) => (
-  //                   <th key={`clause-${i}`} className="p-4 border-b border-blue-700 whitespace-nowrap">{clause}</th>
-  //                 ))}
-  //                 {/* Query column */}
-  //                 <th className="p-4 border-b border-blue-700 whitespace-nowrap">{truthTable.query}</th>
-  //               </tr>
-  //             </thead>
-  //             <tbody>
-  //               {truthTable.rows.map((row, rowIndex) => (
-  //                 <tr key={rowIndex} className={`hover:bg-blue-100 ${row.proves_query ? 'bg-green-50' : ''}`}>
-  //                   <td className="p-4 border-b border-gray-200 text-center text-black">{rowIndex + 1}</td>
-  //                   {/* Model values */}
-  //                   {truthTable.symbols.map(symbol => (
-  //                     <td key={symbol} className="p-4 border-b border-gray-200 text-center text-black">
-  //                       {row.model[symbol] ? 'T' : 'F'}
-  //                     </td>
-  //                   ))}
-  //                   {/* KB results */}
-  //                   {row.kb_results.map((result, i) => (
-  //                     <td key={`result-${i}`} className="p-4 border-b border-gray-200 text-center text-black">
-  //                       {result ? 'T' : 'F'}
-  //                     </td>
-  //                   ))}
-  //                   {/* Query result */}
-  //                   <td className="p-4 border-b border-gray-200 text-center text-black">
-  //                     {row.query_result ? 'T' : 'F'}
-  //                   </td>
-  //                 </tr>
-  //               ))}
-  //             </tbody>
-  //           </table>
-  //         </div>
-  //       </div>
-  //       <div className="mt-4 p-4 bg-gradient-to-b from-sky-400 to-blue-900 text-white rounded-lg text-center">
-  //         <h3 className="text-2xl font-extrabold mb-2">Summary</h3>
-  //         <p className="text-lg font-semibold mb-1">Total Models: {truthTable.summary.total_models}</p>
-  //         <p className="text-lg font-semibold mb-1">Models Proving Query: {truthTable.summary.proving_models}</p>
-  //         <p className="text-lg font-semibold">Query is {truthTable.summary.is_entailed ? 'entailed' : 'not entailed'} by KB</p>
-  //       </div>
-  //     </div>
-  //   );
-  // };
-
-
 
   const renderTruthTable = () => {
     if (!truthTable) return null;
@@ -289,17 +480,23 @@ const iEngineUI = () => {
             <div className="mb-8">
               <h2 className="text-3xl font-semibold mb-4 text-gray-800">Select Algorithms</h2>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {['TT', 'FC', 'BC', 'DPLL'].map((m) => (
+                {[
+                  { key: 'TT', name: 'Truth Table', description: 'Exhaustive search through all possible models.' },
+                  { key: 'FC', name: 'Forward Chaining', description: 'Inference method using forward chaining.' },
+                  { key: 'BC', name: 'Backward Chaining', description: 'Inference method using backward chaining.' },
+                  { key: 'DPLL', name: 'DPLL', description: 'Davis-Putnam-Logemann-Loveland algorithm for SAT.' }
+                ].map((m) => (
                   <button
-                    key={m}
-                    onClick={() => handleMethodSelect(m)}
+                    key={m.key}
+                    onClick={() => handleMethodSelect(m.key)}
                     className={`p-4 rounded-xl font-medium transition-all transform hover:scale-105 
-                      ${method === m
+                      ${method === m.key
                         ? 'bg-blue-600 text-white shadow-lg'
                         : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                       }`}
                   >
-                    {m}
+                    <div className="text-lg font-bold">{m.name}</div>
+                    <div className="text-sm">{m.description}</div>
                   </button>
                 ))}
               </div>
@@ -349,6 +546,14 @@ const iEngineUI = () => {
                 type={method}
                 result={chainResult}
                 knowledgeBase={fileContent} // Pass the KB content
+              />
+            )}
+
+            {/* DPLL Visualization */}
+            {chainResult && method === 'DPLL' && (
+              <DPLLViz 
+                result={chainResult}
+                knowledgeBase={fileContent}
               />
             )}
 

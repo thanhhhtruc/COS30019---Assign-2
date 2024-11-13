@@ -44,6 +44,11 @@ async def process_file(file: UploadFile, method: str = Form(...)):
         if method == "TT":
             truth_table = solver.get_truth_table(query)
             response_data["truthTable"] = truth_table
+         
+        # If using DPLL method, include DPLL result data
+        if method == "DPLL":
+            response_data["assignment"] = additional_info
+            response_data["steps"] = additional_info.get("steps", [])
 
         # Clean up the temporary file
         os.unlink(tmp_file_path)

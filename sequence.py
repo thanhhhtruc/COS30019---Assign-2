@@ -372,13 +372,6 @@ class BackwardChaining(ChainingSolver):
                         self.entailed.append(query)
                     return True
         
-        # # Try to prove through implications
-        # for premises, conclusion in self.kb.horn_clauses:
-        #     if conclusion == query:
-        #         if all(self._can_prove(premise, visited.copy()) for premise in premises):
-        #             if query not in self.entailed:
-        #                 self.entailed.append(query)
-        #             return True
         return False
         
         
@@ -396,41 +389,38 @@ class BackwardChaining(ChainingSolver):
         
         return result, self.entailed
 
+
 class DPLL(InferenceEngine):
     """DPLL (Davis-Putnam-Logemann-Loveland) algorithm implementation."""
-    
-    def _parse_cnf_clauses(self, clause_str: str) -> List[List[str]]:
+
+    def _parse_cnf_clauses(self, clause_str: str): #  -> List[List[Tuple[str, str]]]
         """Convert input clause string to CNF format."""
-        # Split conjunctions
         clauses = []
         for conj in clause_str.split('∧'):
-            # Remove outer parentheses and spaces
             conj = conj.strip('() ')
-            # Split disjunctions
             literals = []
             for disj in conj.split('∨'):
                 lit = disj.strip()
-                # Handle negation
                 if lit.startswith('¬'):
                     literals.append(('-', lit[1:]))
                 else:
                     literals.append(('+', lit))
-            if literals:  # Only add non-empty clauses
+            if literals:
                 clauses.append(literals)
         return clauses
 
-    def _evaluate_clause(self, clause: List[Tuple[str, str]], assignment: Dict[str, bool]) -> Optional[bool]:
+    def _evaluate_clause(self, clause: List[Tuple[str, str]], assignment: Dict[str, bool]): #  -> Optional[bool]
         """Evaluate a clause given an assignment."""
         clause_value = False
         for sign, var in clause:
             if var in assignment:
-                if sign == '+' and assignment[var] or sign == '-' and not assignment[var]:
+                if (sign == '+' and assignment[var]) or (sign == '-' and not assignment[var]):
                     return True
             else:
                 return None  # Undetermined
         return False
 
-    def _eval_formula(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool]) -> Optional[bool]:
+    def _eval_formula(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool]): #  -> Optional[bool]
         """Evaluate entire formula under an assignment."""
         results = []
         for clause in clauses:
@@ -443,69 +433,67 @@ class DPLL(InferenceEngine):
             return all(results)
         return None
 
-    def _dpll_solve(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool], symbols: Set[str]) -> bool:
+    def _dpll_solve(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool], symbols: Set[str], steps: List[str]): # -> bool
         """Core DPLL recursive algorithm."""
-        # Evaluate formula with current assignment
         eval_result = self._eval_formula(clauses, assignment)
+        steps.append(f"Evaluating formula: {eval_result}")
         if eval_result is True:
             return True
         if eval_result is False:
             return False
 
-        # Choose next unassigned variable
+        if not symbols:
+            return False
+
         var = next(iter(symbols))
         remaining_symbols = symbols - {var}
 
-        # Try with True
         assignment_true = assignment.copy()
         assignment_true[var] = True
-        if self._dpll_solve(clauses, assignment_true, remaining_symbols):
+        steps.append(f"Trying {var} = True")
+        if self._dpll_solve(clauses, assignment_true, remaining_symbols, steps):
             assignment.update(assignment_true)
             return True
 
-        # Try with False
         assignment_false = assignment.copy()
         assignment_false[var] = False
-        if self._dpll_solve(clauses, assignment_false, remaining_symbols):
+        steps.append(f"Trying {var} = False")
+        if self._dpll_solve(clauses, assignment_false, remaining_symbols, steps):
             assignment.update(assignment_false)
             return True
 
         return False
 
-    def solve(self, query: str) -> Tuple[bool, Dict[str, bool]]:
+    def solve(self, query: str): #  -> Tuple[bool, Dict[str, Union[bool, List[str]]]]
         """
         Solve using DPLL algorithm.
-        
+
         Args:
             query: The query to prove
-            
+
         Returns:
-            Tuple of (whether query is entailed, assignments)
+            Tuple of (whether query is entailed, assignments with steps)
         """
-        # Get KB clauses in CNF
         kb_clauses = []
         for clause in self.kb.clauses:
             kb_clauses.extend(self._parse_cnf_clauses(clause))
-            
-        # Parse and negate query
+
         query_clauses = self._parse_cnf_clauses(query)
         negated_query = []
         for clause in query_clauses:
             negated = [('+' if sign == '-' else '-', lit) for sign, lit in clause]
             negated_query.append(negated)
-        
-        # Combine KB with negated query
+
         all_clauses = kb_clauses + negated_query
-        
-        # Get all symbols
+
         symbols = set()
         for clause in all_clauses:
             for _, var in clause:
                 symbols.add(var)
-        
-        # Try to satisfy KB ∧ ¬query
+
         assignment = {}
-        is_sat = self._dpll_solve(all_clauses, assignment, symbols)
-        
-        # If KB ∧ ¬query is unsatisfiable, then KB ⊨ query
+        steps = []
+        is_sat = self._dpll_solve(all_clauses, assignment, symbols, steps)
+        assignment['steps'] = steps
+
         return (not is_sat, assignment)
