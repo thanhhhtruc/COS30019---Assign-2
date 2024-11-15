@@ -93,20 +93,37 @@ class KnowledgeBase:
 class InferenceEngine(ABC):
     """Abstract base class for inference engines."""
     
-    def __init__(self, clauses: List[str]):
-        # First check if this is a TT method before validating Horn form
-        is_tt = isinstance(self, TruthTable)
+    # def __init__(self, clauses: List[str]):
+    #     # First check if this is a TT method before validating Horn form
+    #     is_tt = isinstance(self, TruthTable)
         
+    #     try:
+    #         self.kb = KnowledgeBase(clauses)
+            
+    #         # Only check Horn form requirement for chaining methods
+    #         if not is_tt and not self.kb.is_horn_form:
+    #             print(f"Error: Knowledge base contains non-Horn clauses. Found:")
+    #             for clause in clauses:
+    #                 if '||' in clause or '<=>' in clause or ('=>' in clause and '~' in clause.split('=>')[0]):
+    #                     print(f"  - {clause}")
+    #             print("\nOnly TT (truth table) method can be used with non-Horn clauses.")
+    #             sys.exit(1)
+                
+    #     except Exception as e:
+    #         print(f"Error initializing knowledge base: {str(e)}")
+    #         sys.exit(1)
+    
+    def __init__(self, clauses: List[str]):
         try:
             self.kb = KnowledgeBase(clauses)
             
-            # Only check Horn form requirement for chaining methods
-            if not is_tt and not self.kb.is_horn_form:
+            # Skip Horn form validation for DPLL and TT methods
+            if not isinstance(self, (DPLL, TruthTable)) and not self.kb.is_horn_form:
                 print(f"Error: Knowledge base contains non-Horn clauses. Found:")
                 for clause in clauses:
                     if '||' in clause or '<=>' in clause or ('=>' in clause and '~' in clause.split('=>')[0]):
                         print(f"  - {clause}")
-                print("\nOnly TT (truth table) method can be used with non-Horn clauses.")
+                print("\nOnly TT (truth table) method and DPLL can be used with non-Horn clauses.")
                 sys.exit(1)
                 
         except Exception as e:
@@ -390,26 +407,303 @@ class BackwardChaining(ChainingSolver):
         return result, self.entailed
 
 
+
+
+
+
+
+
+# class DPLL(InferenceEngine):
+#     """DPLL (Davis-Putnam-Logemann-Loveland) algorithm implementation."""
+
+#     def _parse_cnf_clauses(self, clause_str: str): #  -> List[List[Tuple[str, str]]]
+#         """Convert input clause string to CNF format."""
+#         clauses = []
+#         for conj in clause_str.split('∧'):
+#             conj = conj.strip('() ')
+#             literals = []
+#             for disj in conj.split('∨'):
+#                 lit = disj.strip()
+#                 if lit.startswith('¬'):
+#                     literals.append(('-', lit[1:]))
+#                 else:
+#                     literals.append(('+', lit))
+#             if literals:
+#                 clauses.append(literals)
+#         return clauses
+
+#     def _evaluate_clause(self, clause: List[Tuple[str, str]], assignment: Dict[str, bool]): #  -> Optional[bool]
+#         """Evaluate a clause given an assignment."""
+#         clause_value = False
+#         for sign, var in clause:
+#             if var in assignment:
+#                 if (sign == '+' and assignment[var]) or (sign == '-' and not assignment[var]):
+#                     return True
+#             else:
+#                 return None  # Undetermined
+#         return False
+
+#     def _eval_formula(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool]): #  -> Optional[bool]
+#         """Evaluate entire formula under an assignment."""
+#         results = []
+#         for clause in clauses:
+#             val = self._evaluate_clause(clause, assignment)
+#             if val is False:
+#                 return False
+#             if val is not None:
+#                 results.append(val)
+#         if len(results) == len(clauses):
+#             return all(results)
+#         return None
+
+#     def _dpll_solve(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool], symbols: Set[str], steps: List[str]): # -> bool
+#         """Core DPLL recursive algorithm."""
+#         eval_result = self._eval_formula(clauses, assignment)
+#         steps.append(f"Evaluating formula: {eval_result}")
+#         if eval_result is True:
+#             return True
+#         if eval_result is False:
+#             return False
+
+#         if not symbols:
+#             return False
+
+#         var = next(iter(symbols))
+#         remaining_symbols = symbols - {var}
+
+#         assignment_true = assignment.copy()
+#         assignment_true[var] = True
+#         steps.append(f"Trying {var} = True")
+#         if self._dpll_solve(clauses, assignment_true, remaining_symbols, steps):
+#             assignment.update(assignment_true)
+#             return True
+
+#         assignment_false = assignment.copy()
+#         assignment_false[var] = False
+#         steps.append(f"Trying {var} = False")
+#         if self._dpll_solve(clauses, assignment_false, remaining_symbols, steps):
+#             assignment.update(assignment_false)
+#             return True
+
+#         return False
+
+#     def solve(self, query: str): #  -> Tuple[bool, Dict[str, Union[bool, List[str]]]]
+#         """
+#         Solve using DPLL algorithm.
+
+#         Args:
+#             query: The query to prove
+
+#         Returns:
+#             Tuple of (whether query is entailed, assignments with steps)
+#         """
+#         kb_clauses = []
+#         for clause in self.kb.clauses:
+#             kb_clauses.extend(self._parse_cnf_clauses(clause))
+
+#         query_clauses = self._parse_cnf_clauses(query)
+#         negated_query = []
+#         for clause in query_clauses:
+#             negated = [('+' if sign == '-' else '-', lit) for sign, lit in clause]
+#             negated_query.append(negated)
+
+#         all_clauses = kb_clauses + negated_query
+
+#         symbols = set()
+#         for clause in all_clauses:
+#             for _, var in clause:
+#                 symbols.add(var)
+
+#         assignment = {}
+#         steps = []
+#         is_sat = self._dpll_solve(all_clauses, assignment, symbols, steps)
+#         assignment['steps'] = steps
+
+#         return (not is_sat, assignment)
+
+
+
+
+
+
+
+
+# class DPLL(InferenceEngine):
+#     """DPLL (Davis-Putnam-Logemann-Loveland) algorithm implementation."""
+
+#     def _convert_to_cnf(self, expression: str) -> List[List[Tuple[str, str]]]:
+#         """Convert a logical expression to CNF format."""
+#         # First, handle biconditionals (p <=> q becomes (p => q) & (q => p))
+#         while '<=>' in expression:
+#             match = re.search(r'(\w+)\s*<=>\s*(\w+)', expression)
+#             if match:
+#                 p, q = match.groups()
+#                 replacement = f'({p}=>{q})&({q}=>{p})'
+#                 expression = expression[:match.start()] + replacement + expression[match.end():]
+
+#         # Handle implications (p => q becomes ~p || q)
+#         while '=>' in expression:
+#             match = re.search(r'([^&|()]+?)\s*=>\s*([^&|()]+)', expression)
+#             if match:
+#                 p, q = match.groups()
+#                 replacement = f'(~{p}||{q})'
+#                 expression = expression[:match.start()] + replacement + expression[match.end():]
+
+#         # Split into clauses (on &)
+#         clauses = []
+#         for conj in expression.split('&'):
+#             conj = conj.strip('() ')
+#             literals = []
+#             # Handle disjunctions
+#             for disj in conj.split('||'):
+#                 lit = disj.strip()
+#                 if lit.startswith('~'):
+#                     literals.append(('-', lit[1:]))
+#                 else:
+#                     literals.append(('+', lit))
+#             if literals:
+#                 clauses.append(literals)
+#         return clauses
+
+#     def _evaluate_clause(self, clause: List[Tuple[str, str]], assignment: Dict[str, bool]) -> Optional[bool]:
+#         """Evaluate a clause given an assignment."""
+#         clause_value = False
+#         for sign, var in clause:
+#             if var in assignment:
+#                 if (sign == '+' and assignment[var]) or (sign == '-' and not assignment[var]):
+#                     return True
+#             else:
+#                 return None  # Undetermined
+#         return False
+
+#     def _eval_formula(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool]) -> Optional[bool]:
+#         """Evaluate entire formula under an assignment."""
+#         results = []
+#         for clause in clauses:
+#             val = self._evaluate_clause(clause, assignment)
+#             if val is False:
+#                 return False
+#             if val is not None:
+#                 results.append(val)
+#         if len(results) == len(clauses):
+#             return all(results)
+#         return None
+
+#     def _dpll_solve(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool], symbols: Set[str], steps: List[str]) -> bool:
+#         """Core DPLL recursive algorithm."""
+#         eval_result = self._eval_formula(clauses, assignment)
+#         steps.append(f"Evaluating formula: {eval_result}")
+#         if eval_result is True:
+#             return True
+#         if eval_result is False:
+#             return False
+
+#         if not symbols:
+#             return False
+
+#         var = next(iter(symbols))
+#         remaining_symbols = symbols - {var}
+
+#         assignment_true = assignment.copy()
+#         assignment_true[var] = True
+#         steps.append(f"Trying {var} = True")
+#         if self._dpll_solve(clauses, assignment_true, remaining_symbols, steps):
+#             assignment.update(assignment_true)
+#             return True
+
+#         assignment_false = assignment.copy()
+#         assignment_false[var] = False
+#         steps.append(f"Trying {var} = False")
+#         if self._dpll_solve(clauses, assignment_false, remaining_symbols, steps):
+#             assignment.update(assignment_false)
+#             return True
+
+#         return False
+
+#     def solve(self, query: str) -> Tuple[bool, Dict[str, Union[bool, List[str]]]]:
+#         """Solve using DPLL algorithm."""
+#         # Convert KB clauses to CNF
+#         kb_clauses = []
+#         for clause in self.kb.clauses:
+#             kb_clauses.extend(self._convert_to_cnf(clause))
+
+#         # Convert query to CNF and negate it
+#         query_clauses = self._convert_to_cnf(query)
+#         negated_query = []
+#         for clause in query_clauses:
+#             negated = [('+' if sign == '-' else '-', lit) for sign, lit in clause]
+#             negated_query.append(negated)
+
+#         all_clauses = kb_clauses + negated_query
+
+#         # Collect all symbols
+#         symbols = set()
+#         for clause in all_clauses:
+#             for _, var in clause:
+#                 symbols.add(var)
+
+#         assignment = {}
+#         steps = []
+#         is_sat = self._dpll_solve(all_clauses, assignment, symbols, steps)
+#         assignment['steps'] = steps
+
+#         return (not is_sat, assignment)
+
+
+
+
+
+
 class DPLL(InferenceEngine):
     """DPLL (Davis-Putnam-Logemann-Loveland) algorithm implementation."""
 
-    def _parse_cnf_clauses(self, clause_str: str): #  -> List[List[Tuple[str, str]]]
+    def _parse_cnf_clauses(self, clause_str: str) -> List[List[Tuple[str, str]]]:
         """Convert input clause string to CNF format."""
-        clauses = []
-        for conj in clause_str.split('∧'):
-            conj = conj.strip('() ')
+        # First split the input into individual clauses (split on &)
+        input_clauses = [c.strip() for c in clause_str.split('&')]
+        result_clauses = []
+        
+        for clause in input_clauses:
+            # Handle empty clauses
+            if not clause:
+                continue
+                
+            # Remove outer parentheses if they exist
+            clause = clause.strip('() ')
+            
+            # Handle biconditional (P <=> Q)
+            if '<=>' in clause:
+                p, q = clause.split('<=>')
+                p, q = p.strip(), q.strip()
+                # Convert P <=> Q to (~P || Q) & (P || ~Q)
+                clause1 = f'~{p}||{q}'
+                clause2 = f'{p}||~{q}'
+                result_clauses.extend(self._parse_cnf_clauses(clause1))
+                result_clauses.extend(self._parse_cnf_clauses(clause2))
+                continue
+            
+            # Handle implication (P => Q)
+            if '=>' in clause:
+                p, q = clause.split('=>')
+                p, q = p.strip(), q.strip()
+                # Convert P => Q to ~P || Q
+                clause = f'~{p}||{q}'
+            
+            # Handle disjunctions
             literals = []
-            for disj in conj.split('∨'):
-                lit = disj.strip()
-                if lit.startswith('¬'):
-                    literals.append(('-', lit[1:]))
+            for lit in clause.split('||'):
+                lit = lit.strip()
+                if lit.startswith('~'):
+                    literals.append(('-', lit[1:].strip()))
                 else:
-                    literals.append(('+', lit))
+                    literals.append(('+', lit.strip()))
+                    
             if literals:
-                clauses.append(literals)
-        return clauses
+                result_clauses.append(literals)
+                
+        return result_clauses
 
-    def _evaluate_clause(self, clause: List[Tuple[str, str]], assignment: Dict[str, bool]): #  -> Optional[bool]
+    def _evaluate_clause(self, clause: List[Tuple[str, str]], assignment: Dict[str, bool]) -> Optional[bool]:
         """Evaluate a clause given an assignment."""
         clause_value = False
         for sign, var in clause:
@@ -420,7 +714,7 @@ class DPLL(InferenceEngine):
                 return None  # Undetermined
         return False
 
-    def _eval_formula(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool]): #  -> Optional[bool]
+    def _eval_formula(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool]) -> Optional[bool]:
         """Evaluate entire formula under an assignment."""
         results = []
         for clause in clauses:
@@ -433,7 +727,7 @@ class DPLL(InferenceEngine):
             return all(results)
         return None
 
-    def _dpll_solve(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool], symbols: Set[str], steps: List[str]): # -> bool
+    def _dpll_solve(self, clauses: List[List[Tuple[str, str]]], assignment: Dict[str, bool], symbols: Set[str], steps: List[str]) -> bool:
         """Core DPLL recursive algorithm."""
         eval_result = self._eval_formula(clauses, assignment)
         steps.append(f"Evaluating formula: {eval_result}")
@@ -464,13 +758,11 @@ class DPLL(InferenceEngine):
 
         return False
 
-    def solve(self, query: str): #  -> Tuple[bool, Dict[str, Union[bool, List[str]]]]
+    def solve(self, query: str) -> Tuple[bool, Dict[str, Union[bool, List[str]]]]:
         """
         Solve using DPLL algorithm.
-
         Args:
             query: The query to prove
-
         Returns:
             Tuple of (whether query is entailed, assignments with steps)
         """
@@ -497,3 +789,4 @@ class DPLL(InferenceEngine):
         assignment['steps'] = steps
 
         return (not is_sat, assignment)
+

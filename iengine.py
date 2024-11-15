@@ -108,7 +108,10 @@ def main():
         
         if result:
             info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
-            print(f'YES: {info_str}')
+            if method != 'DPLL':
+                print(f'YES: {info_str}')
+            else:
+                print('YES')
         else:
             print("NO")
     except Exception as e:
