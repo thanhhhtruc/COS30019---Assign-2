@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Upload, Terminal, AlertCircle, Loader, Table } from 'lucide-react';
+import { ArrowRight, Play, Pause, SkipBack, SkipForward, Upload, Terminal, AlertCircle, Loader, Table, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import ChainViz from './ChainViz';
 
 
@@ -11,10 +11,10 @@ import ChainViz from './ChainViz';
 
 //   const parseDPLLData = (resultString) => {
 //     if (!resultString) return [];
-    
+
 //     // Split the result string into individual steps
 //     const steps = resultString.split('\n').filter(step => step.trim());
-    
+
 //     // Format each step
 //     return steps.map((step, index) => ({
 //         step: index + 1,
@@ -94,17 +94,16 @@ const DPLLViz = ({ result, knowledgeBase }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   const parseDPLLData = (resultString) => {
     if (!resultString) return [];
-    
-    // Split the result string into individual steps
+
     const steps = resultString.split('\n').filter(step => step.trim());
-    
-    // Format each step
+
     return steps.map((step, index) => ({
-        step: index + 1,
-        detail: step.trim()
+      step: index + 1,
+      detail: step.trim()
     }));
   };
 
@@ -135,17 +134,23 @@ const DPLLViz = ({ result, knowledgeBase }) => {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
-  if (!steps.length) return null;
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 2));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.5));
+
+  if (!steps.length) {
+    console.log('No steps to display');
+    return null;
+  }
 
   const renderTreeNodes = (steps) => {
-    const nodeWidth = 140;
-    const nodeHeight = 50;
-    const svgWidth = 1600;
-    const svgHeight = 1200;
+    const nodeWidth = 200;
+    const nodeHeight = 80;
+    const svgWidth = 2000;
+    const svgHeight = 1500;
     const rootX = svgWidth / 2;
     const rootY = nodeHeight * 2;
-    const horizontalSpacing = 200;
-    const verticalSpacing = 100;
+    const horizontalSpacing = 300;
+    const verticalSpacing = 150;
 
     const nodes = steps.map((step, index) => {
       const x = rootX + (index % 2 === 0 ? -1 : 1) * (Math.floor(index / 2) * horizontalSpacing);
@@ -154,7 +159,7 @@ const DPLLViz = ({ result, knowledgeBase }) => {
     });
 
     return (
-      <svg width={svgWidth} height={svgHeight} className="overflow-visible">
+      <svg width={svgWidth} height={svgHeight} className="overflow-visible" style={{ transform: `scale(${zoomLevel})` }}>
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill="#3B82F6" />
@@ -187,16 +192,23 @@ const DPLLViz = ({ result, knowledgeBase }) => {
               y={node.y - nodeHeight / 2}
               width={nodeWidth}
               height={nodeHeight}
-              rx={10}
-              ry={10}
-              fill={index === currentStep ? '#3B82F6' : '#E2E8F0'}
-              stroke="#000"
-              strokeWidth={index === currentStep ? 3 : 1}
+              rx={15}
+              ry={15}
+              fill="#FFFFFF"
+              stroke={index <= currentStep ? '#10B981' : '#3B82F6'}
+              strokeWidth={index === currentStep ? 3 : 2}
               className="transition-all duration-300"
             />
-            <text x={node.x} y={node.y} textAnchor="middle" className="text-sm font-mono fill-gray-700" dy=".35em">
-              {node.step.detail}
-            </text>
+            <foreignObject
+              x={node.x - nodeWidth / 2}
+              y={node.y - nodeHeight / 2}
+              width={nodeWidth}
+              height={nodeHeight}
+            >
+              <div className="flex items-center justify-center h-full p-2">
+                <p className="text-sm font-mono text-gray-700 text-center break-words">{node.step.detail}</p>
+              </div>
+            </foreignObject>
           </g>
         ))}
       </svg>
@@ -224,12 +236,24 @@ const DPLLViz = ({ result, knowledgeBase }) => {
       {/* Controls */}
       <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
         <div className="flex items-center gap-4">
-          <button onClick={handleStepBack} disabled={currentStep === 0} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-none text-gray-800">Back</button>
-          <button onClick={handlePlayPause} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">
-            {isPlaying ? 'Pause' : 'Play'}
+          <button onClick={handleStepBack} disabled={currentStep === 0} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-none text-gray-800">
+            <SkipBack />
           </button>
-          <button onClick={handleStepForward} disabled={currentStep === steps.length - 1} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-none text-gray-800">Forward</button>
-          <button onClick={handleReset} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">Reset</button>
+          <button onClick={handlePlayPause} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">
+            {isPlaying ? <Pause /> : <Play />}
+          </button>
+          <button onClick={handleStepForward} disabled={currentStep === steps.length - 1} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-none text-gray-800">
+            <SkipForward />
+          </button>
+          <button onClick={handleReset} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">
+            <RotateCcw />
+          </button>
+          <button onClick={handleZoomIn} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">
+            <ZoomIn />
+          </button>
+          <button onClick={handleZoomOut} className="p-2 rounded-lg bg-white shadow hover:bg-gray-200 transition duration-200 border-none text-gray-800">
+            <ZoomOut />
+          </button>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-800">Speed:</span>
@@ -311,9 +335,9 @@ const iEngineUI = () => {
         setDpllData(dpllSteps);
         setChainResult(dpllSteps.join('\n'));
         console.log("Rendering DPLLViz with result:", dpllSteps);
-  
+
         console.log('DPLL Steps:', dpllSteps); // Debug log
-      }else if ((selectedMethod === 'FC' || selectedMethod === 'BC') && data.result.includes('YES:')) {
+      } else if ((selectedMethod === 'FC' || selectedMethod === 'BC') && data.result.includes('YES:')) {
         const facts = data.result.split('YES:')[1].trim();
         setChainResult(`YES:\n${facts}`);  // Format for ChainViz
       } else {
@@ -444,7 +468,7 @@ const iEngineUI = () => {
       </header>
 
       {/* Banner Section */}
-      <div className="bg-gradient-to-b from-sky-400 to-blue-900 text-white text-center py-64">
+      <div className="text-white text-center py-64" style={{ backgroundImage: 'url(/bg.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <h2 className="text-6xl font-extrabold">Inference Engine</h2>
         <p className="text-3xl font-semibold mt-2">for Propositional Logic</p>
       </div>
@@ -551,7 +575,7 @@ const iEngineUI = () => {
 
             {/* DPLL Visualization */}
             {chainResult && method === 'DPLL' && (
-              <DPLLViz 
+              <DPLLViz
                 result={chainResult}
                 knowledgeBase={fileContent}
               />
