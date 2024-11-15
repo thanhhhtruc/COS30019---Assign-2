@@ -61,8 +61,9 @@ This repository contains all the necessary scripts and documentation to set up a
 
 ### Using the Program for the CLI Mode
 Open a new terminal and use the command:
-
-python iengine.py <filename> <method>
+    ```
+    python iengine.py <filename> <method>
+    ```
 
 ### Using the Program for the UI Mode
 1. Open your web browser and navigate to `http://localhost:5173`.
