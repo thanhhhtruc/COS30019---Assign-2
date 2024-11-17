@@ -1,0 +1,4 @@
+TELL
+water & sunlight => growth; growth & nutrients => healthy_plant; healthy_plant => blooming; pests => ~healthy_plant; water; sunlight; nutrients; pests;
+ASK
+blooming
