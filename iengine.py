@@ -1,36 +1,6 @@
 import sys
 from sequence import TruthTable, ForwardChaining, BackwardChaining, DPLL
 
-# def parse_input_file(filename):
-#     """Parse the input file to extract KB and query."""
-#     try:
-#         with open(filename, 'r') as file:
-#             content = file.readlines()
-            
-#         # Split content at TELL and ASK markers
-#         if 'TELL' not in content or 'ASK' not in content:
-#             raise ValueError("Input file must contain both TELL and ASK sections.")
-        
-#         parts = content.split('TELL\n')[1].split('ASK\n')
-#         if len(parts) != 2:
-#             raise ValueError("Invalid file format.")
-        
-#         # Extract and clean KB and query
-#         kb_str = parts[0].strip().replace(' ', '').replace('\n', '')
-#         query = parts[1].strip()
-        
-#         # Split KB into clauses
-#         kb_clauses = [clause.strip() for clause in kb_str.split(';') if clause.strip()]
-        
-#         return kb_clauses, query
-#     except FileNotFoundError:
-#         print(f'Error: File "{filename}" not found.')
-#         sys.exit(1)
-#     except Exception as e:
-#         print(f'Error parsing input file: {str(e)}')
-#         sys.exit(1)
-
-
 def parse_input_file(filename):
     """Parse the input file to extract KB and query."""
     try:

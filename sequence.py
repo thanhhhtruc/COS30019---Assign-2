@@ -93,26 +93,6 @@ class KnowledgeBase:
 class InferenceEngine(ABC):
     """Abstract base class for inference engines."""
     
-    # def __init__(self, clauses: List[str]):
-    #     # First check if this is a TT method before validating Horn form
-    #     is_tt = isinstance(self, TruthTable)
-        
-    #     try:
-    #         self.kb = KnowledgeBase(clauses)
-            
-    #         # Only check Horn form requirement for chaining methods
-    #         if not is_tt and not self.kb.is_horn_form:
-    #             print(f"Error: Knowledge base contains non-Horn clauses. Found:")
-    #             for clause in clauses:
-    #                 if '||' in clause or '<=>' in clause or ('=>' in clause and '~' in clause.split('=>')[0]):
-    #                     print(f"  - {clause}")
-    #             print("\nOnly TT (truth table) method can be used with non-Horn clauses.")
-    #             sys.exit(1)
-                
-    #     except Exception as e:
-    #         print(f"Error initializing knowledge base: {str(e)}")
-    #         sys.exit(1)
-    
     def __init__(self, clauses: List[str]):
         try:
             self.kb = KnowledgeBase(clauses)
@@ -134,7 +114,6 @@ class InferenceEngine(ABC):
     def solve(self, query: str):
         """Solve the inference problem."""
         pass
-
 
 
 

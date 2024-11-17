@@ -1,0 +1,4 @@
+TELL
+passing_grades => eligible; eligible & completed_credits => can_graduate; thesis_done => extra_credit; completed_credits & extra_credit => honors; passing_grades; completed_credits; thesis_done;
+ASK
+honors
