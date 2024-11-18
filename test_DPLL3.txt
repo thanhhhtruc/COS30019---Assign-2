@@ -1,4 +1,0 @@
-TELL
-(p ∨ q) ∧ (¬p ∨ s) ∧ (¬q ∨ s)
-ASK
-s
