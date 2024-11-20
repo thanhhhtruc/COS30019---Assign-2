@@ -69,24 +69,43 @@ def main():
     method = sys.argv[2].upper()
     
     try:
-        # Parse input and create solver
         kb_clauses, query = parse_input_file(filename)
         solver = get_solver(method, kb_clauses)
         
-        # Solve and format output
         result, additional_info = solver.solve(query)
         
         if result:
-            info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
-            if method != 'DPLL':
-                print(f'YES: {info_str}')
-            else:
+            if method == 'TT':
+                print(f'YES: {additional_info}')  # additional_info is number of models
+            elif method in ['FC', 'BC']:
+                print(f'YES: {", ".join(additional_info)}')  # additional_info is list of symbols
+            else:  # DPLL
                 print('YES')
         else:
-            print("NO")
+            print('NO')
     except Exception as e:
         print(f"Error: {str(e)}")
         sys.exit(1)
+    
+    # try:
+    #     # Parse input and create solver
+    #     kb_clauses, query = parse_input_file(filename)
+    #     solver = get_solver(method, kb_clauses)
+        
+    #     # Solve and format output
+    #     result, additional_info = solver.solve(query)
+        
+    #     if result:
+    #         info_str = str(additional_info) if isinstance(additional_info, int) else ', '.join(additional_info)
+    #         if method != 'DPLL':
+    #             print(f'YES: {info_str}')
+    #         else:
+    #             print('YES')
+    #     else:
+    #         print("NO")
+    # except Exception as e:
+    #     print(f"Error: {str(e)}")
+    #     sys.exit(1)
 
 
 if __name__ == "__main__":

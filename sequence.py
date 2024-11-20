@@ -227,7 +227,7 @@ class TruthTable(InferenceEngine):
         return (truth_table['summary']['is_entailed'], 
                 truth_table['summary']['proving_models'])
 
-    
+        
 class ChainingSolver(InferenceEngine):
     """Base class for chaining algorithms with common functionality."""
     

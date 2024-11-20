@@ -1,8 +1,4 @@
 TELL
-mythical => immortal &
-~mythical => (~immortal & mammal) &
-(immortal | mammal) => horned &
-horned => magical;
-
+mythical => immortal & ~mythical => (~immortal & mammal) &(immortal || mammal) => horned & horned => magical;
 ASK
-horned;
+horned
