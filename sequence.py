@@ -120,7 +120,7 @@ class InferenceEngine(ABC):
 class TruthTable(InferenceEngine):
     """Truth table checking algorithm implementation with visualization."""
     
-    def _evaluate_clause(self, clause: str, model: Dict[str, bool]): # -> bool
+    def _evaluate_clause(self, clause: str, model: Dict[str, bool]):
         """Evaluate a single clause given a model."""
         # Replace symbols with their boolean values
         expr = clause
@@ -128,16 +128,12 @@ class TruthTable(InferenceEngine):
             expr = re.sub(r'\b' + re.escape(symbol) + r'\b', str(value), expr)
         
         try:
-            # Handle implications
+            # Handle implications first
             while '=>' in expr:
-                parts = expr.split('=>', 1)
-                if len(parts) != 2:
-                    return False
-                
-                left = self._evaluate_boolean_expr(parts[0])
-                right = self._evaluate_boolean_expr(parts[1])
-                result = (not left) or right
-                expr = str(result)
+                antecedent, consequent = expr.split('=>', 1)
+                antecedent_value = self._evaluate_boolean_expr(antecedent)
+                consequent_value = self._evaluate_boolean_expr(consequent)
+                expr = str(not antecedent_value or consequent_value)
             
             return self._evaluate_boolean_expr(expr)
             
@@ -145,16 +141,23 @@ class TruthTable(InferenceEngine):
             print(f"Error evaluating clause '{clause}': {str(e)}")
             return False
     
-    def _evaluate_boolean_expr(self, expr: str): # -> bool
+    def _evaluate_boolean_expr(self, expr: str):
         """Evaluate a boolean expression."""
         expr = expr.strip()
-        expr = expr.replace('&', ' and ').replace('|', ' or ').replace('~', ' not ')
+        
+        # Handle special case where the expression is already a boolean
+        if expr.lower() == 'true':
+            return True
+        if expr.lower() == 'false':
+            return False
+            
+        expr = expr.replace('&', ' and ').replace('||', ' or ').replace('~', ' not ')
         try:
             return bool(eval(expr))
         except:
             return False
 
-    def get_truth_table(self, query: str): # -> dict
+    def get_truth_table(self, query: str):
         """Generate complete truth table data."""
         # Get sorted list of symbols
         symbols = sorted(list(self.kb.symbols))
@@ -170,6 +173,9 @@ class TruthTable(InferenceEngine):
         }
         
         # Generate all possible models
+        kb_sat_count = 0
+        proving_count = 0
+        
         for i in range(total_models):
             # Create model
             model = {}
@@ -177,20 +183,22 @@ class TruthTable(InferenceEngine):
                 model[symbol] = bool((i >> j) & 1)
             
             # Evaluate clauses and query
-            kb_results = []
             kb_satisfied = True
             for clause in self.kb.clauses:
-                result = self._evaluate_clause(clause, model)
-                kb_results.append(result)
-                if not result:
+                if not self._evaluate_clause(clause, model):
                     kb_satisfied = False
+                    break
             
             query_result = self._evaluate_clause(query, model)
+            
+            if kb_satisfied:
+                kb_sat_count += 1
+                if query_result:
+                    proving_count += 1
             
             # Add row to truth table
             row = {
                 'model': model,
-                'kb_results': kb_results,
                 'kb_satisfied': kb_satisfied,
                 'query_result': query_result,
                 'proves_query': kb_satisfied and query_result
@@ -198,12 +206,10 @@ class TruthTable(InferenceEngine):
             truth_table['rows'].append(row)
         
         # Calculate summary
-        proving_models = sum(1 for row in truth_table['rows'] 
-                           if row['kb_satisfied'] and row['query_result'])
         truth_table['summary'] = {
             'total_models': total_models,
-            'proving_models': proving_models,
-            'is_entailed': proving_models > 0
+            'proving_models': proving_count,
+            'is_entailed': kb_sat_count > 0 and proving_count == kb_sat_count
         }
         
         return truth_table
