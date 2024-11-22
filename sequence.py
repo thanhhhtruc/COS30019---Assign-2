@@ -399,40 +399,37 @@ class BackwardChaining(ChainingSolver):
 
 class DPLL(InferenceEngine):
     """DPLL (Davis-Putnam-Logemann-Loveland) algorithm implementation."""
-
+    
+    #_____________________________ Horn 3 and Gen 1 not correct _____________________________ 
     def _parse_cnf_clauses(self, clause_str: str): #  -> List[List[Tuple[str, str]]]
         """Convert input clause string to CNF format."""
-        # First split the input into individual clauses (split on &)
-        input_clauses = [c.strip() for c in clause_str.split('&')]
+        input_clauses = [c.strip() for c in clause_str.split(';') if c.strip()]
         result_clauses = []
-        
+
         for clause in input_clauses:
-            # Handle empty clauses
             if not clause:
                 continue
-                
-            # Remove outer parentheses if they exist
+
             clause = clause.strip('() ')
-            
-            # Handle biconditional (P <=> Q)
+
+            # print(f"Parsing clause: {clause}")  # Debug statement
+
             if '<=>' in clause:
-                p, q = clause.split('<=>')
+                p, q = clause.split('<=>', 1)
                 p, q = p.strip(), q.strip()
-                # Convert P <=> Q to (~P || Q) & (P || ~Q)
                 clause1 = f'~{p}||{q}'
                 clause2 = f'{p}||~{q}'
+                # print(f"Handling biconditional: {clause} as {clause1} and {clause2}")  # Debug statement
                 result_clauses.extend(self._parse_cnf_clauses(clause1))
                 result_clauses.extend(self._parse_cnf_clauses(clause2))
                 continue
-            
-            # Handle implication (P => Q)
+
             if '=>' in clause:
-                p, q = clause.split('=>')
+                p, q = clause.split('=>', 1)
                 p, q = p.strip(), q.strip()
-                # Convert P => Q to ~P || Q
                 clause = f'~{p}||{q}'
-            
-            # Handle disjunctions
+                # print(f"Handling implication: {clause}")  # Debug statement
+
             literals = []
             for lit in clause.split('||'):
                 lit = lit.strip()
@@ -440,11 +437,63 @@ class DPLL(InferenceEngine):
                     literals.append(('-', lit[1:].strip()))
                 else:
                     literals.append(('+', lit.strip()))
-                    
+
             if literals:
+                # print(f"Adding literals: {literals}")  # Debug statement
                 result_clauses.append(literals)
-                
+
         return result_clauses
+    
+    
+    # _____________________________ All Horn test cases are correct, but the genenric is not correct _____________________________ 
+    # def _parse_cnf_clauses(self, clause_str: str): #  -> List[List[Tuple[str, str]]]
+    #     """Convert input clause string to CNF format."""
+    #     # First split the input into individual clauses (split on &)
+    #     input_clauses = [c.strip() for c in clause_str.split('&')]
+    #     result_clauses = []
+        
+    #     for clause in input_clauses:
+    #         # Handle empty clauses
+    #         if not clause:
+    #             continue
+                
+    #         # Remove outer parentheses if they exist
+    #         clause = clause.strip('() ')
+            
+    #         # Handle biconditional (P <=> Q)
+    #         if '<=>' in clause:
+    #             p, q = clause.split('<=>')
+    #             p, q = p.strip(), q.strip()
+    #             # Convert P <=> Q to (~P || Q) & (P || ~Q)
+    #             clause1 = f'~{p}||{q}'
+    #             clause2 = f'{p}||~{q}'
+    #             result_clauses.extend(self._parse_cnf_clauses(clause1))
+    #             result_clauses.extend(self._parse_cnf_clauses(clause2))
+    #             continue
+            
+    #         # Handle implication (P => Q)
+    #         if '=>' in clause:
+    #             p, q = clause.split('=>')
+    #             p, q = p.strip(), q.strip()
+    #             # Convert P => Q to ~P || Q
+    #             clause = f'~{p}||{q}'
+            
+    #         # Handle disjunctions
+    #         literals = []
+    #         for lit in clause.split('||'):
+    #             lit = lit.strip()
+    #             if lit.startswith('~'):
+    #                 literals.append(('-', lit[1:].strip()))
+    #             else:
+    #                 literals.append(('+', lit.strip()))
+                    
+    #         if literals:
+    #             result_clauses.append(literals)
+                
+    #     return result_clauses
+    
+    
+    
 
     def _evaluate_clause(self, clause: List[Tuple[str, str]], assignment: Dict[str, bool]): #  -> Optional[bool]
         """Evaluate a clause given an assignment."""

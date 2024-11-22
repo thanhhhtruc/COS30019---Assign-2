@@ -18,7 +18,7 @@ def run_test_cases():
 
     # Print start of testing
     print("\n" + "="*50)
-    print("Starting Test Cases Execution")
+    print("Starting Test Cases Execution - Generic")
     print("="*50 + "\n")
 
     for case in range(num_test_cases):
