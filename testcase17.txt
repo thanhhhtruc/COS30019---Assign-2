@@ -1,4 +1,6 @@
 TELL
-water & sunlight => growth; growth & nutrients => healthy_plant; healthy_plant => blooming; pests => ~healthy_plant; water; sunlight; nutrients; pests;
+login => authenticated;
+authenticated => access;
+login;
 ASK
-blooming
+access
