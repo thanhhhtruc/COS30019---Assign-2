@@ -7,7 +7,8 @@ def run_test_cases():
     # Specify the directory where the script is located
     directory = os.path.dirname(os.path.abspath(__file__))
     # List of methods for the command
-    methods = ['TT', 'FC', 'BC', 'DPLL']
+    # methods = ['TT', 'FC', 'BC', 'DPLL']
+    methods = ['TT', 'DPLL']
 
     # Number of test cases
     num_test_cases = 20
@@ -21,7 +22,8 @@ def run_test_cases():
     print("="*50 + "\n")
 
     for case in range(num_test_cases):
-        filename = f'testcase{case + 1}.txt'
+        # filename = f'Horn_{case + 1}.txt'
+        filename = f'Generic_{case + 1}.txt'
         file_path = os.path.join(directory, filename)
         
         # Check if file exists before running

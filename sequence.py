@@ -183,11 +183,13 @@ class TruthTable(InferenceEngine):
                 model[symbol] = bool((i >> j) & 1)
             
             # Evaluate clauses and query
+            kb_results = []
             kb_satisfied = True
             for clause in self.kb.clauses:
-                if not self._evaluate_clause(clause, model):
+                result = self._evaluate_clause(clause, model)
+                kb_results.append(result)
+                if not result:
                     kb_satisfied = False
-                    break
             
             query_result = self._evaluate_clause(query, model)
             
@@ -199,6 +201,7 @@ class TruthTable(InferenceEngine):
             # Add row to truth table
             row = {
                 'model': model,
+                'kb_results': kb_results,
                 'kb_satisfied': kb_satisfied,
                 'query_result': query_result,
                 'proves_query': kb_satisfied and query_result
