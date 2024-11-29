@@ -1,4 +1,7 @@
 TELL
-code_tested => ready_deploy; ready_deploy & server_up => deployment; deployment & db_migrated => app_running; server_up; code_tested; db_migrated; app_running => success; monitoring => health_check;
+study => pass;
+practice => pass;
+study;
+practice;
 ASK
-success
+pass
