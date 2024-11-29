@@ -2,14 +2,23 @@
   "version": 2,
   "builds": [
     {
-      "src": "test.py",
+      "src": "api.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "iengine-ui/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "iengine-ui/dist" }
     }
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "api.py"
+    },
+    {
       "src": "/(.*)",
-      "dest": "test.py"
+      "dest": "/iengine-ui/$1"
     }
   ]
 }
